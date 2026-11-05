@@ -1,0 +1,15 @@
+name = "gridlines-fun-server"
+main = "src/index.js"
+compatibility_date = "2025-10-01"
+
+[durable_objects]
+bindings = [{ name = "ROOMS", class_name = "Room" }]
+
+# Free plan: Durable Objects must be SQLite-backed.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]
+
+# Optional: only accept connections from your own page (set to your GitHub Pages address).
+# [vars]
+# ALLOWED_ORIGIN = "https://YOUR-NAME.github.io"

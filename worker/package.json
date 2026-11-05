@@ -1,0 +1,17 @@
+{
+  "name": "gridlines-fun-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "local": "node local-server.mjs",
+    "start": "node local-server.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
