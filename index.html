@@ -4177,7 +4177,7 @@ html[data-theme="dark"] #game .hero{ background:linear-gradient(#1C3B57,#27506F 
   <div class="on-wait hide" id="onWait" role="status"></div>
 
   <div class="modal-back hide" id="worldMap" style="z-index:410">
-    <div class="modal wide" role="dialog" aria-labelledby="worldTitle"><h2 id="worldTitle">The shared map</h2><div id="worldBody"><canvas id="worldCanvas" width="720" height="440" style="width:100%;height:auto;border-radius:10px;display:block;cursor:pointer" aria-label="The shared world map"></canvas><div id="worldPanel"></div></div><div class="btn-row"><button class="btn btn-primary" id="worldClose" type="button">Close</button></div></div>
+    <div class="modal wide" role="dialog" aria-labelledby="worldTitle" style="width:min(1100px,96vw);max-width:none"><h2 id="worldTitle">The shared map</h2><div id="worldBody"><div class="mp-row" id="worldZoom" style="margin-bottom:6px"><button class="btn small" data-zoom="all" type="button">Whole map</button><button class="btn small" data-zoom="me" type="button">My island</button><span id="worldHint" class="note" style="margin:0">Click an island to zoom in on it.</span></div><canvas id="worldCanvas" width="1152" height="704" style="width:100%;height:auto;border-radius:10px;display:block;cursor:default" aria-label="The shared world map. Click an island to zoom in."></canvas><div id="worldPanel"></div></div><div class="btn-row"><button class="btn btn-primary" id="worldClose" type="button">Close</button></div></div>
   </div>
 
   <div class="modal-back hide" id="armyModal" style="z-index:415">
@@ -44172,6 +44172,10 @@ const BUILDINGS={
   stables:{name:'Stables',cost:{materials:22},build:18,color:'#c79a66',unlock:4,size:[2,1],online:true,desc:'Needed to recruit horsemen. Online games only.'},
   stonewall:{name:'Stone wall',cost:{materials:10},build:10,color:'#a5a5ad',unlock:4,online:true,desc:'Adds 4 to your defence (up to eight walls count). Online games only.'},
   workshop:{name:'Siege workshop',cost:{materials:28},build:20,color:'#7a5c3e',unlock:5,size:[2,1],online:true,desc:'Needed to build catapults. Online games only.'},
+  shipyard:{name:'Shipyard',cost:{materials:26},build:20,color:'#3b6e8f',unlock:4,size:[2,1],online:true,desc:'Builds warships (each shipyard holds 4). A fleet rules the river, and one warship is enough to cross it. Online games only.'},
+  foundry:{name:'Foundry',cost:{materials:30},build:20,color:'#4a4a52',unlock:5,size:[2,1],online:true,desc:'Needed to cast cannons. Online games only.'},
+  fortress:{name:'Fortress',cost:{materials:60},build:28,color:'#8b8b93',unlock:5,size:[2,2],online:true,desc:'A great stone fort: +10 defence (up to three count). Online games only.'},
+  factory:{name:'Factory',cost:{materials:50},build:26,color:'#5c5c66',unlock:6,size:[2,1],online:true,desc:'Needed to build tanks. Online games only.'},
   monument:{name:'Great Monument',cost:{materials:90},build:30,color:'#E0A33E',unlock:6,size:[3,2],online:true,desc:'A wonder for the whole island: +5 satisfaction and +3 health every season. Online games only.'}
 };
 
@@ -47763,7 +47767,7 @@ function drawRock(x,y,s){
    flower, columns and an open book on the institute, a field with a scarecrow, a red cross on the clinic,
    a timber tower with its ladder and flag, striped market stalls. A planned building is drawn faded and
    dashed, with its progress bar; each keeps a small name tag. */
-const BH={barracks:36,palisade:26,tavern:34,forge:26,harbour:20,stables:30,stonewall:22,workshop:30,monument:60,leaderhouse:30,granary:26,shelter:26,firepit:8,well:22,stockpile:16,garden:6,institute:30,farm:4,clinic:26,watchtower:50,market:22};
+const BH={shipyard:34,foundry:44,fortress:58,factory:50,barracks:36,palisade:26,tavern:34,forge:26,harbour:20,stables:30,stonewall:22,workshop:30,monument:60,leaderhouse:30,granary:26,shelter:26,firepit:8,well:22,stockpile:16,garden:6,institute:30,farm:4,clinic:26,watchtower:50,market:22};
 const BO='#2B2018';
 function bPath(fill,stroke=true){if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=BO;ctx.stroke();}}
 function bRect(x,y,w,h,fill,r=1.5){ctx.beginPath();ctx.roundRect(x,y,w,h,r);bPath(fill);}
@@ -47852,6 +47856,10 @@ function drawBuildingArt(b,x0,y0,x1,y1){
   else if(t==='stables'){bHouse(cx,by,w*.82,30,'#C79A66','#6E3B1F',{window:false});bRect(cx-9,by-14,18,14,'#4a2a14',1);}
   else if(t==='stonewall'){bRect(x0,by-22,w,22,'#A5A5AD');for(let k=0;k<3;k++)bRect(x0+2+k*(w-4)/3,by-30,(w-4)/3-3,8,'#A5A5AD',1);}
   else if(t==='workshop'){bHouse(cx,by,w*.7,30,'#C9B79C','#5E4B34',{window:false});bLine(x1-16,by,x1-6,by-40,'#7A4A26',3);bLine(x1-24,by-30,x1+2,by-34,'#5B3B20',2);bCirc(x1-24,by-30,4,'#8B8B93');}
+  else if(t==='shipyard'){bRect(x0,by-6,w,6,'#8A5F38',1);bHouse(cx-4,by-6,w*.6,26,'#B9C7D3','#3B6E8F',{window:false});bTri(x1-22,by-8,x1-2,by-8,x1-12,by-34,'#FBF7F0');bLine(x1-12,by-8,x1-12,by-38,'#5B3B20',1.6);}
+  else if(t==='foundry'){bRect(x0+4,by-22,w-8,22,'#6A6A72');bRect(x0+10,by-44,10,24,'#4A4A52',1);bRect(x1-22,by-40,10,20,'#4A4A52',1);bCirc(cx,by-9,6,'#F08A24');}
+  else if(t==='fortress'){bRect(x0+4,by-30,w-8,30,'#9A9AA2');for(let k=0;k<4;k++)bRect(x0+6+k*(w-12)/4,by-40,(w-12)/4-4,10,'#9A9AA2',1);bRect(cx-9,by-18,18,18,'#3A2A1E',1);bLine(cx,by-40,cx,by-58);bTri(cx,by-58,cx+12,by-53,cx,by-48,'#C8323C');}
+  else if(t==='factory'){bRect(x0+4,by-26,w-8,26,'#7B7B85');bRect(x0+10,by-50,9,26,'#55555E',1);bRect(x0+26,by-44,9,20,'#55555E',1);bRect(x1-24,by-18,14,18,'#2f2f36',1);bCirc(x0+14,by-56,4,'#cfcfd6');}
   else if(t==='monument'){bRect(x0+8,by-8,w-16,8,'#E8DCC4',1);bRect(x0+16,by-16,w-32,8,'#E8DCC4',1);bRect(cx-6,by-52,12,36,'#F1D9B0',1);bTri(cx-9,by-52,cx,by-66,cx+9,by-52,'#E0A33E');bCirc(cx,by-72,6,'#E0A33E');}
   else{bRect(x0,y0,w,by-y0,BUILDINGS[t].color);}
 }
@@ -48616,7 +48624,7 @@ el('mpBoardBtn').addEventListener('click',()=>mpShowBoard(false));
    A season is locked in by everyone, the server settles the raids and any world event, then all
    seasons start together.
    ========================================================================= */
-const SL_SERVER = '';   /* paste your Cloudflare Worker address here after deploying, e.g. wss://gridlines-fun-server.YOU.workers.dev */
+const SL_SERVER = 'wss://gridlines-fun-server.a41976262.workers.dev';   /* paste your Cloudflare Worker address here after deploying, e.g. wss://settlement-ledger-server.YOU.workers.dev */
 const ON_COLORS = ['#A8324A', '#2E6A9C', '#2E7D5B', '#C98A1B'];
 const ON_DECLARE = { food: 8, materials: 4 }, ON_RAID = { food: 6 }, ON_GIFT = 10;
 
@@ -48628,29 +48636,33 @@ function onServer() {
 }
 function onSend(m) { if (ON.ws && ON.ws.readyState === 1) ON.ws.send(JSON.stringify(m)); }
 const ON_UNITS = [
-  { k: 'spear', name: 'Spearmen', from: 2, atk: 1, def: 1.3, cost: { materials: 10, food: 4 }, need: 'barracks', n: 1 },
-  { k: 'archer', name: 'Archers', from: 3, atk: 1.8, def: 1.6, cost: { materials: 14, food: 6 }, need: 'barracks', n: 1 },
-  { k: 'horse', name: 'Horsemen', from: 4, atk: 3.4, def: 1.8, cost: { materials: 22, food: 14 }, need: 'stables', n: 1 },
-  { k: 'catapult', name: 'Catapults', from: 5, atk: 6, def: 0.5, cost: { materials: 34, food: 8 }, need: 'workshop', n: 1 },
-  { k: 'champion', name: 'Champions', from: 6, atk: 5, def: 5, cost: { materials: 40, food: 30 }, need: 'barracks', n: 2 },
+  { k: 'spear', name: 'Spearmen', from: 2, atk: 1, def: 1.3, eat: 1, grp: 'land', cost: { materials: 10, food: 4 }, need: 'barracks', n: 1 },
+  { k: 'archer', name: 'Archers', from: 3, atk: 1.8, def: 1.6, eat: 1, grp: 'land', cost: { materials: 14, food: 6 }, need: 'barracks', n: 1 },
+  { k: 'horse', name: 'Horsemen', from: 4, atk: 3.4, def: 1.8, eat: 2, grp: 'land', cost: { materials: 22, food: 14 }, need: 'stables', n: 1 },
+  { k: 'warship', name: 'Warships', from: 4, atk: 4.5, def: 3.2, eat: 2, grp: 'sea', cost: { materials: 30, food: 10 }, need: 'shipyard', n: 1 },
+  { k: 'catapult', name: 'Catapults', from: 5, atk: 6, def: 0.5, eat: 1, grp: 'land', cost: { materials: 34, food: 8 }, need: 'workshop', n: 1 },
+  { k: 'cannon', name: 'Cannons', from: 5, atk: 7.5, def: 1, eat: 2, grp: 'land', cost: { materials: 38, food: 8 }, need: 'foundry', n: 1 },
+  { k: 'champion', name: 'Champions', from: 6, atk: 5, def: 5, eat: 2, grp: 'land', cost: { materials: 40, food: 30 }, need: 'barracks', n: 2 },
+  { k: 'tank', name: 'Tanks', from: 6, atk: 9, def: 6, eat: 3, grp: 'land', cost: { materials: 60, food: 20 }, need: 'factory', n: 1 },
 ];
-const ON_UNLOCKS = { 2: 'New buildings: barracks and palisade. Spearmen can be recruited. Check the Army button.', 3: 'New buildings: tavern, forge and harbour. Archers join, and a harbour lets your boats cross the river.', 4: 'New buildings: stables and stone wall. Horsemen can charge.', 5: 'New building: siege workshop. Catapults smash defences.', 6: 'New building: the Great Monument. Champions will fight for you.' };
-const ON_NEW_IN = { 2: ['barracks', 'palisade'], 3: ['tavern', 'forge', 'harbour'], 4: ['stables', 'stonewall'], 5: ['workshop'], 6: ['monument'] };
+const ON_UNLOCKS = { 2: 'New buildings: barracks and palisade. Spearmen can be recruited. Check the Army button.', 3: 'New buildings: tavern, forge and harbour. Archers join, and a harbour lets your boats cross the river.', 4: 'New buildings: stables, stone wall and shipyard. Horsemen charge, and warships rule the river.', 5: 'New buildings: siege workshop, foundry and fortress. Catapults and cannons smash defences.', 6: 'New buildings: the Great Monument and the factory. Champions and tanks join the fight.' };
+const ON_NEW_IN = { 2: ['barracks', 'palisade'], 3: ['tavern', 'forge', 'harbour'], 4: ['stables', 'stonewall', 'shipyard'], 5: ['workshop', 'foundry', 'fortress'], 6: ['monument', 'factory'] };
 function onSetNewIn(on) { Object.keys(ON_NEW_IN).forEach(y => { const a = NEW_IN[y].buildings; ON_NEW_IN[y].forEach(b => { const i = a.indexOf(b); if (i >= 0) a.splice(i, 1); if (on) a.push(b); }); }); }
 function onArmy() {
   const A = state.army || {}, cnt = (t) => state.buildings.filter(b => b.type === t && b.progress >= 1).length;
-  let att = 0, def = 0, units = 0;
-  ON_UNITS.forEach(u => { const c = A[u.k] || 0; units += c; att += c * u.atk; def += c * u.def; });
+  let att = 0, def = 0, land = 0, sea = 0, eat = 0;
+  ON_UNITS.forEach(u => { const c = A[u.k] || 0; if (u.grp === 'sea') sea += c; else land += c; eat += c * u.eat; att += c * u.atk; def += c * u.def; });
   const sol = roleCounts().soldier || 0;
   att = (att + sol) * (1 + 0.15 * Math.min(3, cnt('forge')));
-  def = def + sol * 1.1 + cnt('palisade') * 1.5 + Math.min(8, cnt('stonewall')) * 4 + cnt('watchtower') * 3;
-  return { att: Math.round(att * 10) / 10, def: Math.round(def * 10) / 10, units, cap: cnt('barracks') * 6, boats: cnt('harbour'), wonder: cnt('monument'), cnt };
+  def = def + sol * 1.1 + cnt('palisade') * 1.5 + Math.min(8, cnt('stonewall')) * 4 + cnt('watchtower') * 3 + Math.min(3, cnt('fortress')) * 10;
+  return { att: Math.round(att * 10) / 10, def: Math.round(def * 10) / 10, units: land + sea, land, sea, eat, landCap: cnt('barracks') * 6, seaCap: cnt('shipyard') * 4, cap: cnt('barracks') * 6 + cnt('shipyard') * 4,
+    boats: cnt('harbour') + (A.warship > 0 ? 1 : 0), ships: A.warship || 0, tanks: A.tank || 0, cannons: A.cannon || 0, wonder: cnt('monument'), cnt };
 }
 function onStats() {
   const a = onArmy();
   return { pop: peopleCount(), soldiers: roleCounts().soldier || 0, towers: completed('watchtower'), knowledge: Math.floor(state.resources.knowledge || 0),
     food: Math.floor(state.resources.food), materials: Math.floor(state.resources.materials), built: state.buildings.filter(b => b.progress >= 1 && !b.start).length,
-    att: a.att, def: a.def, units: a.units, boats: a.boats, wonder: a.wonder,
+    att: a.att, def: a.def, units: a.units, boats: a.boats, wonder: a.wonder, ships: a.ships, tanks: a.tanks, cannons: a.cannons,
     map: state.buildings.filter(b => b.progress >= 1 && b.type !== 'bridge').slice(0, 90).map(b => [b.type, b.gx, b.gy]) };
 }
 function onlineStats() { if (ON.on && ON.started && !ON.finished) { onSend({ t: 'stats', stats: onStats() }); if (ON_UNLOCKS[state.year] && ON.noted !== state.year) { ON.noted = state.year; addLog(ON_UNLOCKS[state.year], 'good'); setMsg(ON_UNLOCKS[state.year]); } } }
@@ -48708,7 +48720,7 @@ function onMsg(m) {
     const txt = `You dug up ${m.text.toLowerCase()}: ${Object.keys(m.reward).map(k => m.reward[k] + ' ' + (k === 'sat' ? 'satisfaction' : k)).join(', ')}.`;
     addLog(txt, 'good'); setMsg(txt); ON.eggs.push({ k: 'party', t0: performance.now() }); renderAll(); return;
   }
-  if (m.t === 'egg') { ON.eggs.push({ k: m.k, t0: performance.now(), name: m.name }); ON.feed.push(`${m.name} summoned ${m.k === 'dragon' ? 'a dragon' : m.k === 'ducks' ? 'the ducks' : m.k === 'party' ? 'a party' : 'Nessie'}!`); ON.unseen++; onHudDraw(); onWorldDraw(); return; }
+  if (m.t === 'egg') { ON.eggs.push({ k: m.k, t0: performance.now(), name: m.name }); ON.feed.push(`${m.name} summoned ${({ dragon: 'a dragon', ducks: 'the ducks', party: 'a party', nessie: 'Nessie', tank: 'a tank parade', armada: 'an armada' })[m.k]}!`); ON.unseen++; onHudDraw(); onWorldDraw(); return; }
   if (m.t === 'board') { ON.room = m.room; onBoard(); return; }
 }
 function onNewWars(had) {
@@ -48737,7 +48749,7 @@ function onBegin(base) {
   el('onSetup').classList.add('hide');
   let done = false; try { done = localStorage.getItem(TUT_KEY) === '1'; } catch (e) {}
   if (!done) tutStart(0);
-  onSetNewIn(true); state.army = state.army || {};
+  onSetNewIn(true); state.army = state.army || {}; ON.cam = null; ON.focus = null;
   onHudDraw(); onlineStats();
   setMsg(`You are ${ON.room.players[ON.slot].name}, on the ${['red', 'blue', 'green', 'gold'][ON.slot]} island.`);
   setTimeout(() => onWorld(), 400);
@@ -48768,7 +48780,7 @@ function onHostStart() {
       return;
     }
     box.innerHTML = `<div class="mp-row"><label>Name</label><input class="mp-in" id="onName" maxlength="16" value="${esc(cfg.name)}" placeholder="Your name"></div>
-      ${needServer ? `<div class="mp-row"><label>Server</label><input class="mp-in" id="onServer" value="${esc(onServer())}" placeholder="wss://gridlines-fun-server.your-name.workers.dev"></div>` : ''}
+      ${needServer ? `<div class="mp-row"><label>Server</label><input class="mp-in" id="onServer" value="${esc(onServer())}" placeholder="wss://settlement-ledger-server.your-name.workers.dev"></div>` : ''}
       <div class="mp-row"><label>Length</label>${[['3', 'Three seasons'], ['6', 'Six seasons'], ['E', 'Endless']].map(([k, t]) => `<button class="btn small ${cfg.mode === k ? 'btn-primary' : ''}" data-m="${k}" type="button">${t}</button>`).join('')}<button class="btn" id="onCreate" type="button">Create room</button></div>
       <div class="mp-row"><label>Join</label><input class="mp-in" id="onCode" maxlength="4" value="${esc(cfg.code)}" placeholder="4-digit code" inputmode="numeric" pattern="[0-9]*"><button class="btn btn-primary" id="onJoin" type="button">Join room</button></div>
       ${cfg.err ? `<p class="note" style="margin:0;color:var(--bad,#b3261e)">${esc(cfg.err)}</p>` : ''}
@@ -48840,7 +48852,7 @@ function onPassive() {
   if (har) { R.food += 4 * har; lines.push(`Fishing boats bring in ${4 * har} food.`); }
   if (mon) { onApply({ sat: 5, health: 3 }); lines.push('The Great Monument fills everyone with pride.'); }
   if (a.units) {
-    const need = a.units;
+    const need = a.eat;
     if (R.food >= need) { R.food -= need; lines.push(`The army eats ${need} food.`); }
     else { const keep = Math.max(0, R.food) / need; R.food = 0; ON_UNITS.forEach(u => { state.army[u.k] = Math.floor((state.army[u.k] || 0) * keep); }); lines.push('There is not enough food for the army, and hungry soldiers desert.'); }
   }
@@ -48863,7 +48875,7 @@ function onGo(m) {
     if (battles.length) {   /* the armies cross the river on the shared map, then the report appears */
       const now = performance.now();
       battles.forEach((b, i) => ON.anim.push({ a: b.a, d: b.d, win: b.win, t0: now + i * 600 }));
-      onWorld(true);
+      onZoomTo(null); onWorld(true);
       setTimeout(() => { el('worldMap').classList.add('hide'); onReport(`Season ${state.year} begins`, lines, resume); }, 3600 + battles.length * 600);
     } else onReport(`Season ${state.year} begins`, lines, resume);
   }
@@ -48889,16 +48901,18 @@ function onWaitDraw(text) {
 el('onWait').addEventListener('click', (e) => { const a = e.target.dataset.act; if (a === 'skip') onSend({ t: 'skip' }); if (a === 'world') onWorld(); });
 
 /* ---------- the shared map: one world, an island each, the river between ---------- */
+const OWW = 1440, OWH = 880;   /* the world is bigger than the islands on it, so there is sea to cross and room to zoom */
 function onIslands(n) {
-  if (n === 2) return [[30, 50, 300, 340], [390, 50, 300, 340]];
-  if (n === 3) return [[30, 15, 300, 195], [390, 15, 300, 195], [210, 235, 300, 195]];
-  return [[30, 15, 300, 195], [390, 15, 300, 195], [30, 235, 300, 195], [390, 235, 300, 195]];
+  if (n === 2) return [[230, 270, 300, 340], [910, 270, 300, 340]];
+  if (n === 3) return [[230, 120, 300, 195], [910, 120, 300, 195], [570, 520, 300, 195]];
+  return [[230, 120, 300, 195], [910, 120, 300, 195], [230, 560, 300, 195], [910, 560, 300, 195]];
 }
-function onSpots(n) {   /* places in the river where something can turn up */
-  if (n === 2) return [[360, 110], [360, 220], [360, 330]];
-  if (n === 3) return [[360, 70], [360, 160], [180, 222], [540, 222], [360, 225]];
-  return [[360, 70], [360, 160], [360, 300], [360, 390], [180, 222], [540, 222], [360, 222]];
+function onSpots(n) {   /* places in the sea where something can turn up */
+  if (n === 2) return [[720, 300], [720, 440], [720, 580], [720, 170], [720, 710]];
+  if (n === 3) return [[720, 215], [350, 430], [1090, 430], [720, 440], [720, 790]];
+  return [[720, 215], [720, 655], [380, 437], [1060, 437], [720, 437]];
 }
+const ON_ISLETS = [[70, 90, 38], [1370, 110, 30], [90, 800, 34], [1350, 790, 42], [720, 45, 24], [40, 450, 22], [1405, 450, 26], [700, 850, 20]];
 const onRng = (seed) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 function onHudDraw() {
   const wb = el('worldBtn'), ab = el('armyBtn'); if (!wb) return;
@@ -48911,13 +48925,47 @@ function onWorld(auto) {
   el('worldMap').classList.remove('hide'); onWorldDraw();
   if (!ON.raf) ON.raf = requestAnimationFrame(onWorldFrame);
 }
+/* where the camera should be: the whole world, or one island filling the picture */
+function onCamFor(cv, n, focus) {
+  const cw = cv.width, ch = cv.height, isl = onIslands(n);
+  if (focus == null || !isl[focus]) { const s = Math.min(cw / OWW, ch / OWH); return { s, x: (cw - OWW * s) / 2, y: (ch - OWH * s) / 2 }; }
+  const r = isl[focus], s = Math.min(cw / (r[2] + 150), ch / (r[3] + 175));
+  return { s, x: cw / 2 - (r[0] + r[2] / 2) * s, y: ch / 2 - (r[1] + r[3] / 2) * s + 12 };
+}
+function onZoomTo(slot) {
+  ON.focus = slot == null ? null : slot;
+  const h = el('worldHint'); if (h) h.textContent = ON.focus == null ? 'Click an island to zoom in on it.' : `Zoomed in on ${onName(ON.focus)}. Click the sea to zoom back out.`;
+}
+function onShip(g, x, y, col, dir) {   /* a little warship */
+  g.save(); g.translate(x, y); g.scale(dir, 1);
+  g.fillStyle = '#4a3320'; g.beginPath(); g.moveTo(-14, 0); g.lineTo(16, 0); g.lineTo(11, 8); g.lineTo(-10, 8); g.closePath(); g.fill();
+  g.fillStyle = col; g.fillRect(-2, -16, 2, 16); g.beginPath(); g.moveTo(0, -16); g.lineTo(11, -4); g.lineTo(0, -4); g.fill();
+  g.fillStyle = '#fff'; g.beginPath(); g.moveTo(-3, -14); g.lineTo(-12, -4); g.lineTo(-3, -4); g.fill(); g.restore();
+}
+function onTank(g, x, y, col, dir) {   /* a little tank */
+  g.save(); g.translate(x, y); g.scale(dir, 1);
+  g.fillStyle = '#3b3b42'; g.beginPath(); g.roundRect(-13, 0, 26, 8, 4); g.fill();
+  g.fillStyle = col; g.beginPath(); g.roundRect(-9, -7, 18, 8, 3); g.fill();
+  g.fillStyle = '#2b2b30'; g.fillRect(8, -5, 12, 3); g.restore();
+}
 function onWorldFrame(ts) {
   const cv = el('worldCanvas');
   if (!cv || el('worldMap').classList.contains('hide') || !ON.room) { ON.raf = 0; return; }
-  const g = cv.getContext('2d'), t = ts / 1000, R = ON.room, n = R.players.length, isl = onIslands(n), W = cv.width, H = cv.height;
-  const grad = g.createLinearGradient(0, 0, 0, H); grad.addColorStop(0, '#86c8ec'); grad.addColorStop(1, '#5aa4d4'); g.fillStyle = grad; g.fillRect(0, 0, W, H);
+  const g = cv.getContext('2d'), t = ts / 1000, R = ON.room, n = R.players.length, isl = onIslands(n), CW = cv.width, CH = cv.height, W = OWW, H = OWH;
+  const T = onCamFor(cv, n, ON.focus);
+  if (!ON.cam) ON.cam = Object.assign({}, T);
+  const cam = ON.cam; cam.s += (T.s - cam.s) * .13; cam.x += (T.x - cam.x) * .13; cam.y += (T.y - cam.y) * .13;
+  const labels = [], lab = (text, wx, wy, px, col, bold) => labels.push([text, wx, wy, px, col, bold]);
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  const grad = g.createLinearGradient(0, 0, 0, CH); grad.addColorStop(0, '#86c8ec'); grad.addColorStop(1, '#5aa4d4'); g.fillStyle = grad; g.fillRect(0, 0, CW, CH);
+  g.setTransform(cam.s, 0, 0, cam.s, cam.x, cam.y);
+  g.fillStyle = 'rgba(40,110,170,.18)'; g.fillRect(-W, -H, W * 3, H * 3);
   g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1.5;
-  for (let y = 14; y < H; y += 26) { g.beginPath(); for (let x = 0; x <= W; x += 12) { const yy = y + Math.sin(x / 38 + t * 1.3 + y) * 2.2; x ? g.lineTo(x, yy) : g.moveTo(x, yy); } g.stroke(); }
+  for (let y = 14; y < H; y += 30) { g.beginPath(); for (let x = 0; x <= W; x += 14) { const yy = y + Math.sin(x / 42 + t * 1.3 + y) * 2.4; x ? g.lineTo(x, yy) : g.moveTo(x, yy); } g.stroke(); }
+  /* the world's edge: little islets, rocks and a few clouds */
+  ON_ISLETS.forEach(([x, y, r], i) => { g.fillStyle = '#ead9a6'; g.beginPath(); g.ellipse(x, y, r + 6, (r + 6) * .7, 0, 0, 7); g.fill(); g.fillStyle = '#b6dc8f'; g.beginPath(); g.ellipse(x, y, r, r * .66, 0, 0, 7); g.fill(); g.strokeStyle = '#6b4a2a'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 3, y - r * .8); g.stroke(); g.fillStyle = '#3f8f4f'; for (let k = 0; k < 4; k++) { g.beginPath(); g.ellipse(x + 3 + Math.cos(k * 1.6) * 9, y - r * .8 + Math.sin(k * 1.6) * 5, 9, 3, k * .8, 0, 7); g.fill(); } });
+  g.fillStyle = 'rgba(255,255,255,.55)';
+  for (let i = 0; i < 5; i++) { const cx = ((t * (5 + i * 2) + i * 330) % (W + 400)) - 200, cy = 70 + i * 170; g.beginPath(); g.ellipse(cx, cy, 70, 18, 0, 0, 7); g.ellipse(cx + 38, cy - 9, 44, 15, 0, 0, 7); g.ellipse(cx - 34, cy - 6, 38, 13, 0, 0, 7); g.fill(); }
   const ctr = (slot) => { const r = isl[slot]; return [r[0] + r[2] / 2, r[1] + r[3] / 2]; };
   R.players.forEach(p => {
     const r = isl[p.slot], col = ON_COLORS[p.slot], st = p.stats || {}, me = p.slot === ON.slot;
@@ -48928,16 +48976,16 @@ function onWorldFrame(ts) {
     for (let i = 0; i < 16; i++) { const x = r[0] + 24 + rnd() * (r[2] - 48), y = r[1] + 40 + rnd() * (r[3] - 70); g.fillStyle = '#4f9a58'; g.beginPath(); g.arc(x, y, 5 + rnd() * 3, 0, 7); g.fill(); }
     const ix = r[0] + 22, iy = r[1] + 40, sx = (r[2] - 44) / 15, sy = (r[3] - 62) / 11;
     (st.map || []).forEach(([type, gx, gy]) => {
-      const def = BUILDINGS[type] || { color: '#999' }, sz = def.size || [1, 1], x = ix + gx * sx, y = iy + gy * sy, w = sz[0] * sx * .9, h = sz[1] * sy * .9;
+      const def = BUILDINGS[type] || { color: '#999', name: type }, sz = def.size || [1, 1], x = ix + gx * sx, y = iy + gy * sy, w = sz[0] * sx * .9, h = sz[1] * sy * .9;
       g.fillStyle = def.color; g.strokeStyle = '#2b2018'; g.lineWidth = 1; g.beginPath(); g.roundRect(x, y, w, h, 2); g.fill(); g.stroke();
       if (type === 'shelter' || type === 'barracks' || type === 'tavern') { g.fillStyle = type === 'barracks' ? '#8e3b2e' : '#c4572e'; g.beginPath(); g.moveTo(x - 1, y + 1); g.lineTo(x + w / 2, y - 5); g.lineTo(x + w + 1, y + 1); g.fill(); }
+      if (cam.s > 1.7 && ON.focus === p.slot) lab(def.name || type, x + w / 2, y + h + 2, 12, '#1e2a38', true);
     });
     const dots = Math.min(34, st.pop || 0), rd = onRng(7 + p.slot);
     for (let i = 0; i < dots; i++) { const bx = r[0] + 30 + rd() * (r[2] - 60), by = r[1] + 46 + rd() * (r[3] - 80); g.fillStyle = col; g.beginPath(); g.arc(bx + Math.sin(t * .8 + i) * 3, by + Math.cos(t * .7 + i * 2) * 2, 2.4, 0, 7); g.fill(); }
-    if (st.boats) { const bx = r[0] < 360 ? r[0] + r[2] + 20 : r[0] - 20, by = r[1] + r[3] / 2 + Math.sin(t * 1.5 + p.slot) * 4; g.fillStyle = '#8a5f38'; g.fillRect(bx - 9, by, 18, 5); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx, by - 13); g.lineTo(bx + 8, by - 3); g.fill(); }
-    g.fillStyle = col; g.beginPath(); g.roundRect(r[0] + 8, r[1] + 6, 168, 25, 12); g.fill();
-    g.fillStyle = '#fff'; g.font = '700 13px sans-serif'; g.textBaseline = 'middle'; g.fillText(`${p.name}${me ? ' (you)' : ''}  ${st.pop == null ? '' : st.pop}`, r[0] + 18, r[1] + 19);
-    g.fillStyle = '#243142'; g.font = '600 11px sans-serif'; g.textAlign = 'right'; g.fillText(p.done ? 'FINISHED' : !p.connected ? 'DISCONNECTED' : st.att != null ? `Att ${st.att}  Def ${st.def}` : '', r[0] + r[2] - 14, r[1] + r[3] - 12); g.textAlign = 'left';
+    for (let i = 0; i < Math.min(4, st.ships || 0); i++) { const left = r[0] < 720, bx = left ? r[0] + r[2] + 30 : r[0] - 30, by = r[1] + 30 + i * (r[3] - 60) / 4 + Math.sin(t * 1.2 + i) * 3; onShip(g, bx, by, ON_COLORS[p.slot], left ? 1 : -1); }
+    for (let i = 0; i < Math.min(4, st.tanks || 0); i++) onTank(g, r[0] + 40 + i * 34, r[1] + r[3] - 26, ON_COLORS[p.slot], 1);
+    if (st.boats && !st.ships) { const bx = r[0] < 720 ? r[0] + r[2] + 20 : r[0] - 20, by = r[1] + r[3] / 2 + Math.sin(t * 1.5 + p.slot) * 4; g.fillStyle = '#8a5f38'; g.fillRect(bx - 9, by, 18, 5); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx, by - 13); g.lineTo(bx + 8, by - 3); g.fill(); }
   });
   Object.keys(R.relations).forEach(k => {
     if (R.relations[k] !== 'war') return; const [a, b] = k.split('-').map(Number), A = ctr(a), B = ctr(b), mx = (A[0] + B[0]) / 2, my = (A[1] + B[1]) / 2;
@@ -48947,42 +48995,70 @@ function onWorldFrame(ts) {
   const spots = onSpots(n);
   if (R.treasure) {
     const [x, y] = spots[R.treasure.spot % spots.length], pulse = 1 + Math.sin(t * 4) * .15;
-    g.fillStyle = 'rgba(255,230,120,.45)'; g.beginPath(); g.arc(x, y, 24 * pulse, 0, 7); g.fill();
+    g.fillStyle = 'rgba(255,230,120,.5)'; g.beginPath(); g.arc(x, y, 26 * pulse, 0, 7); g.fill();
     g.strokeStyle = R.treasure.kind === 'monster' ? '#1f6b3a' : '#7a3b12'; g.lineWidth = 5; g.lineCap = 'round';
     if (R.treasure.kind === 'monster') { g.beginPath(); g.arc(x - 8, y + 4, 8, Math.PI, 0); g.arc(x + 8, y + 4, 8, Math.PI, 0); g.stroke(); }
     else if (R.treasure.kind === 'idol') { g.fillStyle = '#e0a33e'; g.beginPath(); g.arc(x, y - 4, 8, 0, 7); g.fill(); g.fillRect(x - 6, y + 2, 12, 10); }
     else { g.beginPath(); g.moveTo(x - 9, y - 9); g.lineTo(x + 9, y + 9); g.moveTo(x + 9, y - 9); g.lineTo(x - 9, y + 9); g.stroke(); }
-    g.fillStyle = '#fff'; g.font = '700 11px sans-serif'; g.textAlign = 'center'; g.fillText('Click to dig!', x, y + 34); g.textAlign = 'left';
+    lab('Click to dig!', x, y + 36, 15, '#fff', true);
   }
   const now = performance.now();
   ON.anim = ON.anim.filter(a => now - a.t0 < 3400);
   ON.anim.forEach(a => {
     const p = Math.max(0, Math.min(1, (now - a.t0) / 2200)); if (now < a.t0) return;
     const A = ctr(a.a), B = ctr(a.d), x = A[0] + (B[0] - A[0]) * p, y = A[1] + (B[1] - A[1]) * p;
-    if (p < 1) { for (let i = 0; i < 6; i++) { g.fillStyle = ON_COLORS[a.a]; g.fillRect(x - 12 + (i % 3) * 8, y - 6 + Math.floor(i / 3) * 9 + Math.sin(t * 12 + i) * 1.5, 5, 7); } g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.moveTo(x + 14, y - 14); g.lineTo(x + 14, y + 4); g.stroke(); }
-    else { const q = (now - a.t0 - 2200) / 1200; g.strokeStyle = a.win === 'a' ? ON_COLORS[a.a] : a.win === 'd' ? ON_COLORS[a.d] : '#555'; g.lineWidth = 4; g.beginPath(); g.arc(B[0], B[1], 20 + q * 60, 0, 7); g.stroke(); g.fillStyle = '#fff'; g.font = '700 16px sans-serif'; g.textAlign = 'center'; g.fillText(a.win === 'a' ? `${onName(a.a)} wins!` : a.win === 'd' ? `${onName(a.d)} holds!` : 'Stalemate', B[0], B[1] - 30 - q * 10); g.textAlign = 'left'; }
+    if (p < 1) {
+      const as = (R.players[a.a] && R.players[a.a].stats) || {}, dir = B[0] >= A[0] ? 1 : -1;
+      if (as.ships) { for (let i = 0; i < Math.min(3, as.ships); i++) onShip(g, x - dir * i * 22, y + i * 10 + Math.sin(t * 8 + i) * 2, ON_COLORS[a.a], dir); }
+      if (as.tanks) { for (let i = 0; i < Math.min(3, as.tanks); i++) onTank(g, x - dir * i * 26, y - 16 - i * 4, ON_COLORS[a.a], dir); }
+      if (!as.ships || (as.units || 0) > (as.ships || 0)) { for (let i = 0; i < 6; i++) { g.fillStyle = ON_COLORS[a.a]; g.fillRect(x - 12 + (i % 3) * 8, y + 14 + Math.floor(i / 3) * 9 + Math.sin(t * 12 + i) * 1.5, 5, 7); } }
+      g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.moveTo(x + 14, y - 14); g.lineTo(x + 14, y + 4); g.stroke(); }
+    else { const q = (now - a.t0 - 2200) / 1200; g.strokeStyle = a.win === 'a' ? ON_COLORS[a.a] : a.win === 'd' ? ON_COLORS[a.d] : '#555'; g.lineWidth = 4; g.beginPath(); g.arc(B[0], B[1], 20 + q * 60, 0, 7); g.stroke(); lab(a.win === 'a' ? `${onName(a.a)} wins!` : a.win === 'd' ? `${onName(a.d)} holds!` : 'Stalemate', B[0], B[1] - 36 - q * 12, 22, '#fff', true); }
   });
   ON.eggs = ON.eggs.filter(e => now - e.t0 < 6500);
   ON.eggs.forEach(e => {
     const q = (now - e.t0) / 6500;
-    if (e.k === 'dragon') { const x = -80 + q * (W + 160), y = 90 + Math.sin(q * 9) * 24; g.fillStyle = '#7a1f2b'; g.beginPath(); g.ellipse(x, y, 34, 11, 0, 0, 7); g.fill(); g.beginPath(); g.arc(x + 36, y - 4, 9, 0, 7); g.fill(); g.fillStyle = '#b3402e'; g.beginPath(); g.moveTo(x - 6, y - 4); g.lineTo(x + 12, y - 40 + Math.sin(t * 14) * 10); g.lineTo(x + 24, y - 4); g.fill(); g.fillStyle = '#f4a23a'; g.beginPath(); g.moveTo(x + 46, y - 4); g.lineTo(x + 70 + Math.random() * 10, y - 8); g.lineTo(x + 46, y + 2); g.fill(); }
-    else if (e.k === 'ducks') { for (let i = 0; i < 7; i++) { const sp = onSpots(n)[i % onSpots(n).length], x = sp[0] + Math.sin(t + i) * 22, y = ((q * 440 * 1.1 + i * 60) % 460); g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(sp[0] + Math.sin(t * 2 + i) * 14, y, 7, 0, 7); g.fill(); g.fillStyle = '#f08a24'; g.fillRect(sp[0] + 6 + Math.sin(t * 2 + i) * 14, y - 1, 6, 3); } }
-    else if (e.k === 'party') { const rnd = onRng(Math.floor(e.t0) % 999 + 1); for (let i = 0; i < 70; i++) { const x = rnd() * W, y = ((rnd() * H + q * 380) % H); g.fillStyle = ['#e4572e', '#f4c542', '#2e6a9c', '#2e7d5b', '#b04aa5'][i % 5]; g.fillRect(x + Math.sin(t * 3 + i) * 6, y, 6, 9); } }
-    else if (e.k === 'nessie') { const sp = onSpots(n)[0], k = Math.sin(q * Math.PI); g.strokeStyle = '#1f6b3a'; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); g.moveTo(sp[0] - 40, sp[1] + 10); g.quadraticCurveTo(sp[0] - 20, sp[1] - 38 * k, sp[0], sp[1] + 8); g.quadraticCurveTo(sp[0] + 18, sp[1] - 52 * k, sp[0] + 38, sp[1] + 8); g.stroke(); g.fillStyle = '#1f6b3a'; g.beginPath(); g.arc(sp[0] + 38, sp[1] - 8 * k, 8, 0, 7); g.fill(); }
+    if (e.k === 'dragon') { const x = -80 + q * (W + 160), y = 200 + Math.sin(q * 9) * 40; g.fillStyle = '#7a1f2b'; g.beginPath(); g.ellipse(x, y, 34, 11, 0, 0, 7); g.fill(); g.beginPath(); g.arc(x + 36, y - 4, 9, 0, 7); g.fill(); g.fillStyle = '#b3402e'; g.beginPath(); g.moveTo(x - 6, y - 4); g.lineTo(x + 12, y - 40 + Math.sin(t * 14) * 10); g.lineTo(x + 24, y - 4); g.fill(); g.fillStyle = '#f4a23a'; g.beginPath(); g.moveTo(x + 46, y - 4); g.lineTo(x + 70 + Math.random() * 10, y - 8); g.lineTo(x + 46, y + 2); g.fill(); }
+    else if (e.k === 'ducks') { for (let i = 0; i < 7; i++) { const sp = spots[i % spots.length], y = ((q * H * 1.1 + i * 120) % (H + 20)); g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(sp[0] + Math.sin(t * 2 + i) * 14, y, 8, 0, 7); g.fill(); g.fillStyle = '#f08a24'; g.fillRect(sp[0] + 7 + Math.sin(t * 2 + i) * 14, y - 1, 7, 3); } }
+    else if (e.k === 'party') { const rnd = onRng(Math.floor(e.t0) % 999 + 1); for (let i = 0; i < 110; i++) { const x = rnd() * W, y = ((rnd() * H + q * 700) % H); g.fillStyle = ['#e4572e', '#f4c542', '#2e6a9c', '#2e7d5b', '#b04aa5'][i % 5]; g.fillRect(x + Math.sin(t * 3 + i) * 6, y, 8, 12); } }
+    else if (e.k === 'tank') { for (let i = 0; i < 4; i++) onTank(g, -40 + q * (W + 120) - i * 56, 440 + (i % 2) * 10 + Math.sin(t * 10 + i) * 1.5, ON_COLORS[i % 4], 1.4); }
+    else if (e.k === 'armada') { for (let i = 0; i < 5; i++) onShip(g, W + 40 - q * (W + 140) + i * 60, 400 + (i % 3) * 30 + Math.sin(t * 2 + i) * 4, ON_COLORS[i % 4], -1.4); }
+    else if (e.k === 'nessie') { const sp = spots[0], k = Math.sin(q * Math.PI); g.strokeStyle = '#1f6b3a'; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); g.moveTo(sp[0] - 40, sp[1] + 10); g.quadraticCurveTo(sp[0] - 20, sp[1] - 38 * k, sp[0], sp[1] + 8); g.quadraticCurveTo(sp[0] + 18, sp[1] - 52 * k, sp[0] + 38, sp[1] + 8); g.stroke(); g.fillStyle = '#1f6b3a'; g.beginPath(); g.arc(sp[0] + 38, sp[1] - 8 * k, 8, 0, 7); g.fill(); }
   });
+  /* writing is drawn at a steady size on the screen, wherever the camera is */
+  g.setTransform(1, 0, 0, 1, 0, 0); g.textBaseline = 'middle';
+  R.players.forEach(p => {
+    const r = isl[p.slot], st = p.stats || {}, me = p.slot === ON.slot, col = ON_COLORS[p.slot];
+    const bx = cam.x + r[0] * cam.s, by = cam.y + r[1] * cam.s - 30, label = `${p.name}${me ? ' (you)' : ''}  ${st.pop == null ? '' : st.pop}`;
+    g.font = '700 22px sans-serif'; const w = g.measureText(label).width + 26;
+    g.fillStyle = col; g.beginPath(); g.roundRect(bx, by - 15, w, 30, 15); g.fill(); g.fillStyle = '#fff'; g.fillText(label, bx + 13, by + 1);
+    const sub = p.done ? 'FINISHED' : !p.connected ? 'DISCONNECTED' : st.att != null ? `Att ${st.att}  Def ${st.def}` : '';
+    if (sub) { g.font = '600 17px sans-serif'; g.fillStyle = '#12304a'; g.textAlign = 'right'; g.fillText(sub, cam.x + (r[0] + r[2]) * cam.s, cam.y + (r[1] + r[3]) * cam.s + 24); g.textAlign = 'left'; }
+  });
+  labels.forEach(([text, wx, wy, px, col, bold]) => { g.font = `${bold ? '700' : '500'} ${px}px sans-serif`; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = 'rgba(20,40,60,.55)'; const X = cam.x + wx * cam.s, Y = cam.y + wy * cam.s; g.strokeText(text, X, Y); g.fillStyle = col; g.fillText(text, X, Y); g.textAlign = 'left'; });
+  if (ON.focus != null && cam.s > 1.6 && R.players[ON.focus]) {   /* a card for the island you are looking at */
+    const p = R.players[ON.focus], st = p.stats || {}, rows = [`Settlers ${st.pop == null ? '?' : st.pop}`, `Soldiers ${st.soldiers || 0}   Army ${st.units || 0}`, `Ships ${st.ships || 0}   Tanks ${st.tanks || 0}`, `Food ${st.food == null ? '?' : st.food}   Materials ${st.materials == null ? '?' : st.materials}`];
+    g.fillStyle = 'rgba(255,255,255,.88)'; g.beginPath(); g.roundRect(CW - 300, 14, 286, 28 + rows.length * 26, 12); g.fill();
+    g.fillStyle = ON_COLORS[p.slot]; g.font = '700 20px sans-serif'; g.fillText(p.name, CW - 286, 34); g.fillStyle = '#1e2a38'; g.font = '500 17px sans-serif'; rows.forEach((tx, i) => g.fillText(tx, CW - 286, 62 + i * 26));
+  }
+  g.fillStyle = 'rgba(18,48,74,.8)'; g.font = '700 18px sans-serif'; g.fillText('N', 26, CH - 52); g.strokeStyle = 'rgba(18,48,74,.8)'; g.lineWidth = 3; g.beginPath(); g.moveTo(32, CH - 42); g.lineTo(32, CH - 14); g.moveTo(18, CH - 28); g.lineTo(46, CH - 28); g.stroke();
   ON.raf = requestAnimationFrame(onWorldFrame);
 }
+function onCanvasPt(e) { const cv = el('worldCanvas'), rc = cv.getBoundingClientRect(), x = (e.clientX - rc.left) * cv.width / rc.width, y = (e.clientY - rc.top) * cv.height / rc.height, c = ON.cam || { s: 1, x: 0, y: 0 }; return { x, y, wx: (x - c.x) / c.s, wy: (y - c.y) / c.s, s: c.s }; }
+function onIslandAt(wx, wy) { const R = ON.room; if (!R) return -1; const isl = onIslands(R.players.length); for (let i = 0; i < isl.length; i++) { const r = isl[i]; if (wx > r[0] - 12 && wx < r[0] + r[2] + 12 && wy > r[1] - 12 && wy < r[1] + r[3] + 12) return i; } return -1; }
 el('worldCanvas').addEventListener('click', (e) => {
-  const cv = e.target, rc = cv.getBoundingClientRect(), x = (e.clientX - rc.left) * cv.width / rc.width, y = (e.clientY - rc.top) * cv.height / rc.height;
-  const R = ON.room; if (!R || !R.treasure || ON.finished) return;
-  const sp = onSpots(R.players.length), [tx, ty] = sp[R.treasure.spot % sp.length];
-  if (Math.hypot(x - tx, y - ty) < 34) onSend({ t: 'dig', id: R.treasure.id });
+  const R = ON.room; if (!R) return; const q = onCanvasPt(e);
+  if (R.treasure && !ON.finished) { const sp = onSpots(R.players.length), [tx, ty] = sp[R.treasure.spot % sp.length]; if (Math.hypot(q.wx - tx, q.wy - ty) < 36 / Math.min(1, q.s) ) { onSend({ t: 'dig', id: R.treasure.id }); return; } }
+  const i = onIslandAt(q.wx, q.wy);
+  if (i >= 0 && ON.focus !== i) onZoomTo(i); else onZoomTo(null);   /* an island zooms in; the sea, or the same island again, zooms out */
 });
+el('worldCanvas').addEventListener('mousemove', (e) => { const q = onCanvasPt(e), i = onIslandAt(q.wx, q.wy); el('worldCanvas').style.cursor = i >= 0 && ON.focus !== i ? 'zoom-in' : ON.focus != null ? 'zoom-out' : 'default'; });
+el('worldZoom').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; onZoomTo(b.dataset.zoom === 'me' ? ON.slot : null); });
 let onTyped = '';
 document.addEventListener('keydown', (e) => {   /* secret words, typed on the world map */
   if (el('worldMap').classList.contains('hide') || !ON.on || e.target.tagName === 'INPUT' || e.key.length !== 1) return;
   onTyped = (onTyped + e.key.toLowerCase()).slice(-8);
-  ['dragon', 'ducks', 'party', 'nessie'].forEach(w => { if (onTyped.endsWith(w)) { onSend({ t: 'egg', k: w }); onTyped = ''; } });
+  ['dragon', 'ducks', 'party', 'nessie', 'tank', 'armada'].forEach(w => { if (onTyped.endsWith(w)) { onSend({ t: 'egg', k: w }); onTyped = ''; } });
 });
 function onWorldDraw() {
   const modal = el('worldMap'); if (!modal || modal.classList.contains('hide') || !ON.room) return;
@@ -49025,21 +49101,21 @@ el('worldBtn').addEventListener('click', () => onWorld());
 function onArmyDraw() {
   const a = onArmy(), A = state.army || {}, y = state.year;
   const rows = ON_UNITS.map(u => {
-    const locked = y < u.from, have = a.cnt(u.need) >= u.n, full = a.units >= a.cap, afford = canAfford(u.cost);
-    const why = locked ? `Unlocks in Season ${u.from}` : !have ? `Needs ${u.n > 1 ? u.n + ' ' : 'a '}${BUILDINGS[u.need].name.toLowerCase()}${u.n > 1 ? 's' : ''}` : full ? 'Barracks are full' : !afford ? 'Not enough resources' : '';
-    return `<div class="note" style="margin:0;${locked ? 'opacity:.55' : ''}"><b>${u.name}</b> x ${A[u.k] || 0} <span style="opacity:.8">(attack ${u.atk}, defence ${u.def})</span>
+    const locked = y < u.from, have = a.cnt(u.need) >= u.n, full = u.grp === 'sea' ? a.sea >= a.seaCap : a.land >= a.landCap, afford = canAfford(u.cost);
+    const why = locked ? `Unlocks in Season ${u.from}` : !have ? `Needs ${u.n > 1 ? u.n + ' ' : 'a '}${BUILDINGS[u.need].name.toLowerCase()}${u.n > 1 ? 's' : ''}` : full ? (u.grp === 'sea' ? 'Shipyards are full' : 'Barracks are full') : !afford ? 'Not enough resources' : '';
+    return `<div class="note" style="margin:0;${locked ? 'opacity:.55' : ''}"><b>${u.name}</b> x ${A[u.k] || 0} <span style="opacity:.8">(attack ${u.atk}, defence ${u.def}, eats ${u.eat})</span>
       <div class="mp-row" style="margin-top:6px"><button class="btn small" data-unit="${u.k}" type="button" ${why ? 'disabled' : ''}>Recruit for ${costText(u.cost)}</button><span style="font-size:.82rem">${why}</span></div></div>`;
   }).join('');
-  el('armyBody').innerHTML = `<p class="note" style="margin:0">Attack <b>${a.att}</b>, defence <b>${a.def}</b>. Army ${a.units} of ${a.cap} (each barracks holds 6). Harbours: ${a.boats}${a.boats ? '' : ' (you need one to raid across the river)'}. Each soldier eats 1 food a season.</p>
+  el('armyBody').innerHTML = `<p class="note" style="margin:0">Attack <b>${a.att}</b>, defence <b>${a.def}</b>. Land army ${a.land} of ${a.landCap} (each barracks holds 6). Fleet ${a.sea} of ${a.seaCap} (each shipyard holds 4). Boats: ${a.boats ? 'yes' : 'none (you need a harbour or a warship to raid across the river)'}. The army eats ${a.eat} food a season.</p>
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">${rows}</div>
-    <p class="note" style="margin:10px 0 0">Palisade +1.5 defence. Stone wall +4. Watchtower +3. Forge +15% attack (up to 3). Tavern +4 satisfaction a season. Harbour +4 food a season. Great Monument: pride and health every season.</p>`;
+    <p class="note" style="margin:10px 0 0">Palisade +1.5 defence. Stone wall +4. Watchtower +3. Fortress +10 (up to 3). Forge +15% attack (up to 3). Tavern +4 satisfaction a season. Harbour +4 food a season. Great Monument: pride and health every season.</p>`;
 }
 el('armyBtn').addEventListener('click', () => { onArmyDraw(); el('armyModal').classList.remove('hide'); });
 el('armyClose').addEventListener('click', () => el('armyModal').classList.add('hide'));
 el('armyBody').addEventListener('click', (e) => {
   const b = e.target.closest('[data-unit]'); if (!b || b.disabled) return;
   const u = ON_UNITS.find(x => x.k === b.dataset.unit), a = onArmy();
-  if (!u || ON.wait || state.year < u.from || a.cnt(u.need) < u.n || a.units >= a.cap || !canAfford(u.cost)) { if (ON.wait) setMsg('Your plan is locked in for this season.'); return; }
+  if (!u || ON.wait || state.year < u.from || a.cnt(u.need) < u.n || (u.grp === 'sea' ? a.sea >= a.seaCap : a.land >= a.landCap) || !canAfford(u.cost)) { if (ON.wait) setMsg('Your plan is locked in for this season.'); return; }
   pay(u.cost); state.army = state.army || {}; state.army[u.k] = (state.army[u.k] || 0) + 1;
   addLog(`Recruited ${u.name.toLowerCase().replace(/s$/, '')}.`, 'good'); renderAll(); onArmyDraw(); onlineStats();
 });

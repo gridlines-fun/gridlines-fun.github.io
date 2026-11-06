@@ -21,7 +21,7 @@ const TREASURE = {
   idol: { text: 'A golden idol', reward: { knowledge: 15, medicine: 3 } },
   monster: { text: 'The river monster', reward: { food: 30, sat: 4 } },
 };
-const EGGS = ['dragon', 'ducks', 'party', 'nessie'];
+const EGGS = ['dragon', 'ducks', 'party', 'nessie', 'tank', 'armada'];
 
 export function newRoom(code, mode, now) {
   return { code, mode, created: now, phase: 'lobby', season: 1, players: [], relations: {}, offers: [], layout: null, feed: [] };
@@ -163,7 +163,7 @@ function sanitizeStats(s) {
   const dec = (v, hi) => Math.max(0, Math.min(hi, Math.round((Number(v) || 0) * 10) / 10));
   const map = Array.isArray(s.map) ? s.map.slice(0, 90).map((b) => [clean(b && b[0], 14), num(b && b[1], 0, 20), num(b && b[2], 0, 20)]) : [];
   return { pop: num(s.pop, 0, 9999), soldiers: num(s.soldiers, 0, 9999), towers: num(s.towers, 0, 99), knowledge: num(s.knowledge, 0, 9999), food: num(s.food, 0, 99999), materials: num(s.materials, 0, 99999), built: num(s.built, 0, 999),
-    att: s.att == null ? null : dec(s.att, 999), def: s.def == null ? null : dec(s.def, 999), units: num(s.units, 0, 999), boats: num(s.boats, 0, 99), wonder: num(s.wonder, 0, 9), map };
+    att: s.att == null ? null : dec(s.att, 999), def: s.def == null ? null : dec(s.def, 999), units: num(s.units, 0, 999), boats: num(s.boats, 0, 99), wonder: num(s.wonder, 0, 9), ships: num(s.ships, 0, 99), tanks: num(s.tanks, 0, 99), cannons: num(s.cannons, 0, 99), map };
 }
 
 export function maybeGo(room) {
@@ -200,7 +200,8 @@ function resolve(room) {
     const far = adjacent(room, a.slot, d.slot) ? 1 : 0.8;
     const atkPow = sa.att != null ? sa.att + 0.12 * sa.pop : (sa.soldiers + 0.12 * sa.pop) * 1.2;
     const defPow = sd.def != null ? sd.def + 0.12 * sd.pop : sd.soldiers * 1.25 + 0.12 * sd.pop + sd.towers * 3;
-    const ap = atkPow * bonus(sa) * far * (0.75 + Math.random() * 0.5);
+    const naval = (sa.ships || 0) > (sd.ships || 0) ? 1.1 : 1;   /* whoever rules the river has the edge */
+    const ap = atkPow * bonus(sa) * far * naval * (0.75 + Math.random() * 0.5);
     const dp = defPow * bonus(sd) * (0.75 + Math.random() * 0.5);
     const m = (ap - dp) / Math.max(1, ap + dp);
     if (Math.abs(m) < 0.04) {

@@ -4,7 +4,7 @@ A settlement game with maths questions. Play alone, endless, pass-and-play on on
 each player gets a plot on a shared map, can declare war and send raiders, send aid, and gets hit by shared world events.
 
 - `index.html` is the whole game (GitHub Pages serves it).
-- `worker/` is the small server for online rooms (Cloudflare Workers, free plan, or any Node host such as Render).
+- `worker/` is the small server for online rooms (Cloudflare Workers, free plan).
 
 ## Put it online (about 15 minutes)
 
@@ -49,15 +49,11 @@ cd worker && npm install && npm run local
 Open the game with `?server=ws://localhost:8787` added to its address, in two or more browser windows.
 
 ## How online play works
-- One player picks **Play online**, chooses a length and creates a room. A **4-digit code** appears. Friends open the same page, choose **Play online**, type their name and the code. Nothing else. (Set `SL_SERVER` once in `index.html`, see step 3, so nobody has to type the server address.)
-- The host starts when 2 to 4 have joined. It is one world: a shared map with an island for each player, separated by a river (two side by side, three in a triangle, four in a cross). Everyone starts with the same island.
+- One player creates a room and shares the 4-letter code. The host starts once 2 to 4 have joined. Everyone gets the same valley and settlers.
+- The shared map has one plot per player: two side by side, three in a triangle, four in a square. In the square, corner-to-corner raids are weaker.
 - Each season: plan, then **Run** locks your plan in. When everyone has locked in (the host can press *Don't wait*), the server settles raids and any world event, and all seasons start together.
-- **War** opens in Season 2. Declaring costs 8 food and 4 materials, and an army raid costs 6 food. Armies must cross the river, so you need a **harbour** (Season 3) to launch boats. The armies are shown marching across the map.
-- **Army** (button in the top bar): recruit spearmen (Season 2), archers (3), horsemen (4, need stables), catapults (5, need a siege workshop) and champions (6). Barracks hold 6 soldiers each. Soldiers eat 1 food a season and desert if you cannot feed them.
-- **New things to build as seasons go up:** barracks and palisade (2), tavern, forge and harbour (3), stables and stone wall (4), siege workshop (5), the Great Monument (6). These appear only in online games.
-- **World events** hit everyone or one island: harvest, drought, festival, plague, caravan, ore seam, pirates, a royal wedding, a comet and a silver fish run.
-- **Treasure:** most seasons something turns up in the river (a chest, a golden idol or the river monster). Click it on the map. The first player to dig it up gets the prize.
-- **Easter eggs:** with the world map open, type `dragon`, `ducks`, `party` or `nessie` and everyone sees it.
+- **War** opens in Season 2. Declaring costs 8 food and 4 materials; a raid costs 6 food. Strength comes from soldiers, settlers, watchtowers and knowledge, plus a dice roll, and defenders get a small edge. Winners loot food and materials and may capture settlers. Either side can offer peace.
+- World events: harvests, droughts, festivals, plague in the biggest village, a caravan for the smallest, a rich ore seam.
 - The biggest village at the end wins.
 
 ## Limits worth knowing
