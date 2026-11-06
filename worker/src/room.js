@@ -11,7 +11,17 @@ export const EVENTS = [
   { key: 'plague', scope: 'top', title: 'Plague in the biggest village', text: 'Crowded villages suffer first.', fx: { health: -8, sat: -3 }, kill: 0.05 },
   { key: 'caravan', scope: 'low', title: 'Trade caravan', text: 'Merchants favour the smallest settlement.', fx: { materials: 0.8, food: 0.4 } },
   { key: 'goldrush', scope: 'one', title: 'Stone and ore', text: 'One village strikes a rich seam.', fx: { materials: 1.2 } },
+  { key: 'pirates', scope: 'top', title: 'River pirates', text: 'Pirates raid the richest island and sail off with its stores.', fx: { food: -0.35, materials: -0.2 } },
+  { key: 'wedding', scope: 'one', title: 'A royal wedding', text: 'Feasting on one island lifts every heart.', fx: { sat: 10, food: -0.2 } },
+  { key: 'comet', scope: 'all', title: 'A comet over the valley', text: 'Everyone stays up to watch. Wise words are traded.', fx: { sat: 3, health: 2 } },
+  { key: 'fishrun', scope: 'all', title: 'Silver fish run', text: 'The river is thick with fish for a week.', fx: { food: 0.35, materials: 0.1 } },
 ];
+const TREASURE = {
+  treasure: { text: 'A buried chest', reward: { materials: 25 } },
+  idol: { text: 'A golden idol', reward: { knowledge: 15, medicine: 3 } },
+  monster: { text: 'The river monster', reward: { food: 30, sat: 4 } },
+};
+const EGGS = ['dragon', 'ducks', 'party', 'nessie'];
 
 export function newRoom(code, mode, now) {
   return { code, mode, created: now, phase: 'lobby', season: 1, players: [], relations: {}, offers: [], layout: null, feed: [] };
@@ -19,6 +29,7 @@ export function newRoom(code, mode, now) {
 
 const pub = (r) => ({
   code: r.code, mode: r.mode, phase: r.phase, season: r.season, layout: r.layout, relations: r.relations, offers: r.offers,
+  treasure: r.treasure && !r.treasure.by ? { id: r.treasure.id, kind: r.treasure.kind, spot: r.treasure.spot } : null,
   players: r.players.map((p) => ({ slot: p.slot, name: p.name, connected: p.connected, ready: !!p.ready, done: !!p.done, away: !!p.away, stats: p.stats || null, result: p.result || null })),
 });
 const key = (a, b) => (a < b ? a + '-' + b : b + '-' + a);
@@ -118,6 +129,19 @@ export function handle(room, slot, msg, ctx) {
     o.push(...maybeGo(room));
     return o;
   }
+  if (t === 'dig') {
+    const tr = room.treasure;
+    if (!tr || tr.by != null || me.done || num(msg.id, 0, 2e9) !== tr.id) return o;
+    tr.by = slot;
+    const info = TREASURE[tr.kind];
+    o.push(out(slot, { t: 'prize', kind: tr.kind, text: info.text, reward: info.reward }), feed(room, me.name + ' found ' + info.text.toLowerCase() + '!'), sync(room));
+    return o;
+  }
+  if (t === 'egg') {
+    if (EGGS.indexOf(msg.k) < 0) return o;
+    o.push(out('all', { t: 'egg', k: msg.k, name: me.name }));
+    return o;
+  }
   if (t === 'final') {
     if (me.done) return o;
     me.done = true; me.ready = false;
@@ -136,7 +160,10 @@ export function handle(room, slot, msg, ctx) {
 
 function sanitizeStats(s) {
   s = s || {};
-  return { pop: num(s.pop, 0, 9999), soldiers: num(s.soldiers, 0, 9999), towers: num(s.towers, 0, 99), knowledge: num(s.knowledge, 0, 9999), food: num(s.food, 0, 99999), materials: num(s.materials, 0, 99999), built: num(s.built, 0, 999) };
+  const dec = (v, hi) => Math.max(0, Math.min(hi, Math.round((Number(v) || 0) * 10) / 10));
+  const map = Array.isArray(s.map) ? s.map.slice(0, 90).map((b) => [clean(b && b[0], 14), num(b && b[1], 0, 20), num(b && b[2], 0, 20)]) : [];
+  return { pop: num(s.pop, 0, 9999), soldiers: num(s.soldiers, 0, 9999), towers: num(s.towers, 0, 99), knowledge: num(s.knowledge, 0, 9999), food: num(s.food, 0, 99999), materials: num(s.materials, 0, 99999), built: num(s.built, 0, 999),
+    att: s.att == null ? null : dec(s.att, 999), def: s.def == null ? null : dec(s.def, 999), units: num(s.units, 0, 999), boats: num(s.boats, 0, 99), wonder: num(s.wonder, 0, 9), map };
 }
 
 export function maybeGo(room) {
@@ -148,7 +175,9 @@ export function maybeGo(room) {
   room.season += 1;
   room.players.forEach((p) => { p.ready = false; p.away = false; p.attack = null; });
   room.offers = [];
-  const o = [out('all', { t: 'go', season, results, event: event ? { key: event.key, title: event.title, text: event.text } : null })];
+  const hunt = spawnTreasure(room);
+  const o = [out('all', { t: 'go', season, results, battles: results.battles, event: event ? { key: event.key, title: event.title, text: event.text } : null })];
+  if (hunt) o.push(feed(room, 'Something has turned up in the river. Be the first to dig it up!'));
   results.lines.forEach((l) => o.push(feed(room, l)));
   if (event) o.push(feed(room, event.title + '. ' + event.text));
   o.push(sync(room));
@@ -156,40 +185,57 @@ export function maybeGo(room) {
 }
 
 function resolve(room) {
-  const res = {}; const lines = [];
-  room.players.forEach((p) => { res[p.slot] = { food: 0, materials: 0, kill: 0, captured: 0, sat: 0, health: 0, lines: [] }; });
+  const res = {}; const lines = []; const battles = [];
+  room.players.forEach((p) => { res[p.slot] = { food: 0, materials: 0, kill: 0, captured: 0, sat: 0, health: 0, unitLoss: 0, lines: [] }; });
   const bonus = (s) => 1 + Math.min(0.3, s.knowledge / 200);
   room.players.forEach((a) => {
     if (a.attack == null || a.done) return;
     const d = room.players.find((p) => p.slot === a.attack);
     if (!d || !atWar(room, a.slot, d.slot) || d.done) return;
     const sa = a.stats || sanitizeStats(), sd = d.stats || sanitizeStats();
+    if (sa.att != null && !sa.boats) {   /* the armies of an island need boats to cross the river */
+      const l = a.name + ' wanted to raid ' + d.name + ' but had no harbour to launch boats from.';
+      lines.push(l); res[a.slot].lines.push(l); return;
+    }
     const far = adjacent(room, a.slot, d.slot) ? 1 : 0.8;
-    const ap = (sa.soldiers + 0.12 * sa.pop) * 1.2 * bonus(sa) * far * (0.75 + Math.random() * 0.5);
-    const dp = (sd.soldiers * 1.25 + 0.12 * sd.pop + sd.towers * 3) * bonus(sd) * (0.75 + Math.random() * 0.5);
+    const atkPow = sa.att != null ? sa.att + 0.12 * sa.pop : (sa.soldiers + 0.12 * sa.pop) * 1.2;
+    const defPow = sd.def != null ? sd.def + 0.12 * sd.pop : sd.soldiers * 1.25 + 0.12 * sd.pop + sd.towers * 3;
+    const ap = atkPow * bonus(sa) * far * (0.75 + Math.random() * 0.5);
+    const dp = defPow * bonus(sd) * (0.75 + Math.random() * 0.5);
     const m = (ap - dp) / Math.max(1, ap + dp);
     if (Math.abs(m) < 0.04) {
-      res[a.slot].kill += 1; res[d.slot].kill += 1;
+      res[a.slot].kill += 1; res[d.slot].kill += 1; res[a.slot].unitLoss += 0.15; res[d.slot].unitLoss += 0.15;
+      battles.push({ a: a.slot, d: d.slot, win: 'draw' });
       const l = a.name + "'s raid on " + d.name + ' ended in a bloody stalemate.';
       lines.push(l); res[a.slot].lines.push(l); res[d.slot].lines.push(l);
     } else if (m > 0) {
       const food = Math.min(sd.food, Math.round(sd.food * (0.15 + 0.2 * m))), mat = Math.min(sd.materials, Math.round(sd.materials * (0.15 + 0.2 * m)));
       const dead = Math.max(1, Math.round(sd.pop * (0.04 + 0.08 * m))), taken = m > 0.25 ? Math.min(2, Math.floor(dead / 2)) : 0, lost = Math.max(0, Math.round(sa.pop * 0.02));
-      res[a.slot].food += food; res[a.slot].materials += mat; res[a.slot].captured += taken; res[a.slot].kill += lost;
-      res[d.slot].food -= food; res[d.slot].materials -= mat; res[d.slot].kill += dead + taken;
+      res[a.slot].food += food; res[a.slot].materials += mat; res[a.slot].captured += taken; res[a.slot].kill += lost; res[a.slot].unitLoss += 0.1;
+      res[d.slot].food -= food; res[d.slot].materials -= mat; res[d.slot].kill += dead + taken; res[d.slot].unitLoss += 0.3;
+      battles.push({ a: a.slot, d: d.slot, win: 'a' });
       lines.push(a.name + ' defeated ' + d.name + ' and took ' + food + ' food and ' + mat + ' materials.');
       res[a.slot].lines.push('Your raid on ' + d.name + ' succeeded: ' + food + ' food, ' + mat + ' materials' + (taken ? ', ' + taken + ' captured settlers' : '') + (lost ? '; you lost ' + lost + '.' : '.'));
       res[d.slot].lines.push(a.name + ' raided you: ' + (dead + taken) + ' settlers lost, ' + food + ' food and ' + mat + ' materials taken.');
     } else {
       const lost = Math.max(1, Math.round(sa.pop * (0.05 + 0.08 * -m))), foodW = Math.min(sa.food, Math.round(sa.food * 0.1));
-      res[a.slot].kill += lost; res[a.slot].food -= foodW; res[d.slot].food += foodW;
+      res[a.slot].kill += lost; res[a.slot].food -= foodW; res[d.slot].food += foodW; res[a.slot].unitLoss += 0.3; res[d.slot].unitLoss += 0.08;
+      battles.push({ a: a.slot, d: d.slot, win: 'd' });
       lines.push(d.name + ' held off ' + a.name + "'s raid.");
       res[a.slot].lines.push('Your raid on ' + d.name + ' failed: ' + lost + ' settlers lost.');
       res[d.slot].lines.push('You held off ' + a.name + "'s raid and captured " + foodW + ' food.');
     }
   });
-  res.lines = lines;
+  res.lines = lines; res.battles = battles;
   return res;
+}
+
+function spawnTreasure(room) {
+  room.treasure = null;
+  if (Math.random() < 0.25) return false;
+  const r = Math.random(), kind = r < 0.6 ? 'treasure' : r < 0.85 ? 'idol' : 'monster';
+  room.treasure = { id: Math.floor(Math.random() * 1e9), kind, spot: Math.floor(Math.random() * 1000), by: null };
+  return true;
 }
 
 function rollEvent(room, results) {
@@ -246,4 +292,4 @@ export function leave(room, token) {
   return o;
 }
 export const canJoin = (room) => room.phase === 'lobby' && room.players.length < MAX_PLAYERS;
-export { pub, maybeGo as _maybeGo, MAX_PLAYERS, RAID_FOOD };
+export { pub, maybeGo as _maybeGo, MAX_PLAYERS, RAID_FOOD, TREASURE, EGGS };

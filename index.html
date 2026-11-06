@@ -4115,7 +4115,7 @@ html[data-theme="dark"] #game .hero{ background:linear-gradient(#1C3B57,#27506F 
       <span class="gtag" id="phaseTag">Briefing</span>
       <span class="gtag info" id="skillTag">Variables</span>
     </div>
-    <div class="title-right"><button class="btn small hide" id="worldBtn" type="button">World</button><button class="btn small hide" id="mpBoardBtn" type="button">Players</button><button class="btn small hide" id="stopBtn" type="button">Stop here</button><button class="btn small" id="handbookBtn" type="button">Handbook</button><button class="btn small" id="guideBtn" type="button">Guide</button><div class="year-strip" id="yearStrip" aria-label="Seasons"></div></div>
+    <div class="title-right"><button class="btn small hide" id="armyBtn" type="button">Army</button><button class="btn small hide" id="worldBtn" type="button">World</button><button class="btn small hide" id="mpBoardBtn" type="button">Players</button><button class="btn small hide" id="stopBtn" type="button">Stop here</button><button class="btn small" id="handbookBtn" type="button">Handbook</button><button class="btn small" id="guideBtn" type="button">Guide</button><div class="year-strip" id="yearStrip" aria-label="Seasons"></div></div>
   </header>
 
   <div class="sl-main">
@@ -4177,7 +4177,11 @@ html[data-theme="dark"] #game .hero{ background:linear-gradient(#1C3B57,#27506F 
   <div class="on-wait hide" id="onWait" role="status"></div>
 
   <div class="modal-back hide" id="worldMap" style="z-index:410">
-    <div class="modal wide" role="dialog" aria-labelledby="worldTitle"><h2 id="worldTitle">The shared map</h2><div id="worldBody"></div><div class="btn-row"><button class="btn btn-primary" id="worldClose" type="button">Close</button></div></div>
+    <div class="modal wide" role="dialog" aria-labelledby="worldTitle"><h2 id="worldTitle">The shared map</h2><div id="worldBody"><canvas id="worldCanvas" width="720" height="440" style="width:100%;height:auto;border-radius:10px;display:block;cursor:pointer" aria-label="The shared world map"></canvas><div id="worldPanel"></div></div><div class="btn-row"><button class="btn btn-primary" id="worldClose" type="button">Close</button></div></div>
+  </div>
+
+  <div class="modal-back hide" id="armyModal" style="z-index:415">
+    <div class="modal wide" role="dialog" aria-labelledby="armyTitle"><h2 id="armyTitle">Your army</h2><div id="armyBody"></div><div class="btn-row"><button class="btn btn-primary" id="armyClose" type="button">Close</button></div></div>
   </div>
 
   <div class="modal-back hide" id="onReport" style="z-index:430">
@@ -44159,7 +44163,16 @@ const BUILDINGS={
   watchtower:{name:'Watchtower',cost:{materials:16},build:18,color:'#a08b7a',unlock:5,size:[1,2],desc:'Takes 2 tiles, one behind the other. Guards against wolves and raiders, with or without soldiers. Within 4 tiles of a clinic, where the watch is patched up quickly, it guards fully; further away, half as well. Makes the village feel safe to newcomers.'},
   market:{name:'Market',cost:{materials:18},build:20,color:'#b9a1dc',unlock:6,size:[3,2],desc:'Takes 6 tiles, 3 wide and 2 deep. Traders earn more goods, and travellers hear of it: more newcomers come. Works fully within 2 tiles of the road, half as well further away.'},
   leaderhouse:{name:'Leader’s house',cost:{materials:25},build:16,color:'#E0A33E',unlock:99,desc:'Your own house, bought from the shop. You sleep here, which frees a bed in the shelters.'},
-  bridge:{name:'Bridge',cost:{materials:50},build:28,color:'#8A5F38',unlock:1,desc:'Lets settlers reach land across the water and build there. It goes where the road meets the river, or across up to 3 tiles of narrow water to land nobody can reach yet.'}
+  bridge:{name:'Bridge',cost:{materials:50},build:28,color:'#8A5F38',unlock:1,desc:'Lets settlers reach land across the water and build there. It goes where the road meets the river, or across up to 3 tiles of narrow water to land nobody can reach yet.'},
+  barracks:{name:'Barracks',cost:{materials:20},build:16,color:'#a5482f',unlock:2,size:[2,1],online:true,desc:'Trains your army. Each barracks holds 6 soldiers. Online games only.'},
+  palisade:{name:'Palisade',cost:{materials:6},build:6,color:'#9a6b3f',unlock:2,online:true,desc:'A wooden fence that adds 1.5 to your defence when raiders come. Online games only.'},
+  tavern:{name:'Tavern',cost:{materials:14},build:14,color:'#d98a3d',unlock:3,size:[2,1],online:true,desc:'Songs and ale: +4 satisfaction every season (two taverns count at most). Online games only.'},
+  forge:{name:'Forge',cost:{materials:18},build:16,color:'#6b6b73',unlock:3,size:[2,1],online:true,desc:'Better weapons: +15% attack for your army (up to three forges). Online games only.'},
+  harbour:{name:'Harbour',cost:{materials:20},build:16,color:'#2e6a9c',unlock:3,size:[2,1],online:true,desc:'Boats can cross the river from here, so you can raid other islands. Fish bring in 4 food a season. Online games only.'},
+  stables:{name:'Stables',cost:{materials:22},build:18,color:'#c79a66',unlock:4,size:[2,1],online:true,desc:'Needed to recruit horsemen. Online games only.'},
+  stonewall:{name:'Stone wall',cost:{materials:10},build:10,color:'#a5a5ad',unlock:4,online:true,desc:'Adds 4 to your defence (up to eight walls count). Online games only.'},
+  workshop:{name:'Siege workshop',cost:{materials:28},build:20,color:'#7a5c3e',unlock:5,size:[2,1],online:true,desc:'Needed to build catapults. Online games only.'},
+  monument:{name:'Great Monument',cost:{materials:90},build:30,color:'#E0A33E',unlock:6,size:[3,2],online:true,desc:'A wonder for the whole island: +5 satisfaction and +3 health every season. Online games only.'}
 };
 
 const YEARS={
@@ -44185,7 +44198,7 @@ const state={
    skills of seasons two to six so the ledger keeps asking different things */
 function yd(y){if(y<=6)return YEARS[y];const k=((y-2)%5)+2;return Object.assign({},YEARS[6],{title:'The Long Road',skill:YEARS[k].skill,focus:YEARS[k].focus,story:'The village has settled in for the long haul. Keep it fed, housed and growing for as long as you like, and stop whenever you want.'});}
 const MP={on:false,players:[],cur:0,mode:'6',names:[]};
-const ON = { on: false, started: false, joined: false, ws: null, code: '', slot: -1, token: '', name: '', host: false, mode: '6', room: null, wait: false, go: false, attack: null, feed: [], unseen: 0, retry: 0, leaving: false, finished: false, pending: null };
+const ON = { on: false, started: false, joined: false, ws: null, code: '', slot: -1, token: '', name: '', host: false, mode: '6', room: null, wait: false, go: false, attack: null, feed: [], unseen: 0, retry: 0, leaving: false, finished: false, pending: null, eggs: [], anim: [], raf: 0, noted: 0 };
 let NOQ=(()=>{try{return localStorage.getItem('sl-noq')==='1';}catch(e){return false;}})();
 function noQ(){return NOQ;}
 function capFirst(s){return s.charAt(0).toUpperCase()+s.slice(1);}
@@ -44195,7 +44208,7 @@ function el(id){return document.getElementById(id);}
 function peopleCount(){return state.people.filter(p=>p.alive).length;}
 function roleCounts(){const c={};Object.keys(ROLES).forEach(r=>c[r]=0);state.people.forEach(p=>{if(p.alive)c[p.role]=(c[p.role]||0)+1;});return c;}
 function unlockedRoles(){return yd(state.year).unlockRoles;}
-function unlockedBuildings(){return Object.keys(BUILDINGS).filter(b=>BUILDINGS[b].unlock<=state.year);}
+function unlockedBuildings(){return Object.keys(BUILDINGS).filter(b=>BUILDINGS[b].unlock<=state.year&&(!BUILDINGS[b].online||ON.on));}
 function plannedShelters(){return state.buildings.filter(b=>b.type==='shelter').length;}
 function readyShelters(){return state.buildings.filter(b=>b.type==='shelter'&&b.progress>=1).length;}
 function plannedShelterCapacity(){return plannedShelters()*8;}
@@ -47750,7 +47763,7 @@ function drawRock(x,y,s){
    flower, columns and an open book on the institute, a field with a scarecrow, a red cross on the clinic,
    a timber tower with its ladder and flag, striped market stalls. A planned building is drawn faded and
    dashed, with its progress bar; each keeps a small name tag. */
-const BH={leaderhouse:30,granary:26,shelter:26,firepit:8,well:22,stockpile:16,garden:6,institute:30,farm:4,clinic:26,watchtower:50,market:22};
+const BH={barracks:36,palisade:26,tavern:34,forge:26,harbour:20,stables:30,stonewall:22,workshop:30,monument:60,leaderhouse:30,granary:26,shelter:26,firepit:8,well:22,stockpile:16,garden:6,institute:30,farm:4,clinic:26,watchtower:50,market:22};
 const BO='#2B2018';
 function bPath(fill,stroke=true){if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=BO;ctx.stroke();}}
 function bRect(x,y,w,h,fill,r=1.5){ctx.beginPath();ctx.roundRect(x,y,w,h,r);bPath(fill);}
@@ -47831,6 +47844,15 @@ function drawBuildingArt(b,x0,y0,x1,y1){
       for(let s=0;s<4;s++){ctx.fillStyle=cols[k][s%2];ctx.fillRect(sx+s*sw/4,sy-9,sw/4,7);}ctx.strokeStyle=BO;ctx.strokeRect(sx,sy-9,sw,7);
       bLine(sx+2,sy-2,sx+2,by,'#7A4A26',1.5);bLine(sx+sw-2,sy-2,sx+sw-2,by,'#7A4A26',1.5);
       const fruit=['#E4572E','#F4C542','#98C85A','#B04AA5'];for(let f=0;f<3;f++){ctx.fillStyle=fruit[(k+f)%4];ctx.beginPath();ctx.arc(sx+sw*.3+f*sw*.2,sy+4,2.6,0,Math.PI*2);ctx.fill();}}}
+  else if(t==='barracks'){bHouse(cx,by,w*.78,36,'#CDBBA0','#8E3B2E',{window:false});bLine(x1-8,by-36,x1-8,by-58);bTri(x1-8,by-58,x1+6,by-53,x1-8,by-48,'#C8323C');bLine(x0+8,by,x0+14,by-22,'#5B3B20',2);bLine(x0+16,by,x0+22,by-22,'#5B3B20',2);}
+  else if(t==='palisade'){const pw=(w-6)/4;for(let k=0;k<4;k++){const px=x0+3+k*pw;bRect(px,by-26,pw-2,26,'#9A6B3F',1);bTri(px,by-26,px+(pw-2)/2,by-36,px+pw-2,by-26,'#7A4A26');}}
+  else if(t==='tavern'){bHouse(cx,by,w*.8,34,'#E8C9A0','#A8561F');bRect(x1-22,by-34,14,10,'#F4C542',1);bLine(x0+6,by,x0+6,by-26,'#5B3B20',2);}
+  else if(t==='forge'){bRect(x0+5,by-24,w-10,24,'#8B8B93');bRect(x1-20,by-44,9,22,'#5E5E66',1);bCirc(x0+w*.35,by-9,6,'#F08A24');bRect(x0+w*.6,by-14,12,5,'#3b3b42',1);}
+  else if(t==='harbour'){bRect(x0,by-7,w,7,'#8A5F38',1);for(let k=0;k<4;k++)bLine(x0+6+k*(w-12)/3,by-7,x0+6+k*(w-12)/3,by+3,'#5B3B20',2);bTri(cx-10,by-9,cx+12,by-9,cx,by-34,'#FBF7F0');bLine(cx,by-9,cx,by-38,'#5B3B20',1.6);}
+  else if(t==='stables'){bHouse(cx,by,w*.82,30,'#C79A66','#6E3B1F',{window:false});bRect(cx-9,by-14,18,14,'#4a2a14',1);}
+  else if(t==='stonewall'){bRect(x0,by-22,w,22,'#A5A5AD');for(let k=0;k<3;k++)bRect(x0+2+k*(w-4)/3,by-30,(w-4)/3-3,8,'#A5A5AD',1);}
+  else if(t==='workshop'){bHouse(cx,by,w*.7,30,'#C9B79C','#5E4B34',{window:false});bLine(x1-16,by,x1-6,by-40,'#7A4A26',3);bLine(x1-24,by-30,x1+2,by-34,'#5B3B20',2);bCirc(x1-24,by-30,4,'#8B8B93');}
+  else if(t==='monument'){bRect(x0+8,by-8,w-16,8,'#E8DCC4',1);bRect(x0+16,by-16,w-32,8,'#E8DCC4',1);bRect(cx-6,by-52,12,36,'#F1D9B0',1);bTri(cx-9,by-52,cx,by-66,cx+9,by-52,'#E0A33E');bCirc(cx,by-72,6,'#E0A33E');}
   else{bRect(x0,y0,w,by-y0,BUILDINGS[t].color);}
 }
 function drawBuilding(b){
@@ -48093,7 +48115,7 @@ document.addEventListener('click',e=>{
   e.preventDefault();e.stopPropagation();askLeave(a.href);
 },true);
 window.addEventListener('beforeunload',e=>{if(leaving||!midGame())return;e.preventDefault();e.returnValue='';});
-const beginGame=(short,endless)=>{ON.on=false;ON.started=false;MP.on=false;state.short=short;state.endless=!!endless;el('mpSetup').classList.add('hide');el('splash').classList.add('hide');resetGame();recStart();let done=false;try{done=localStorage.getItem(TUT_KEY)==='1';}catch(e){}if(!done)tutStart(0);};
+const beginGame=(short,endless)=>{if(typeof onSetNewIn==='function')onSetNewIn(false);ON.on=false;ON.started=false;MP.on=false;state.short=short;state.endless=!!endless;el('mpSetup').classList.add('hide');el('splash').classList.add('hide');resetGame();recStart();let done=false;try{done=localStorage.getItem(TUT_KEY)==='1';}catch(e){}if(!done)tutStart(0);};
 el('startShortBtn').addEventListener('click',()=>beginGame(true));
 el('startBtn').addEventListener('click',()=>beginGame(false));
 el('startEndlessBtn').addEventListener('click',()=>beginGame(false,true));
@@ -48346,7 +48368,7 @@ el('heroArt').innerHTML=heroSVG();
 function handbookHtml(){
   const y=state.year||1,pct=v=>Math.round(v*100)+'%';
   const roleRows=Object.keys(ROLES).map(r=>`<tr><td><span class="role-dot" style="background:${ROLES[r].color};display:inline-block"></span> ${ROLES[r].name}</td><td>${ROLES[r].desc}</td><td>${ROLES[r].unlock<=1?'From the start':'Season '+ROLES[r].unlock}</td></tr>`).join('');
-  const bRows=Object.keys(BUILDINGS).map(b=>`<tr><td><span class="swatch" style="background:${BUILDINGS[b].color};display:inline-block"></span> ${BUILDINGS[b].name}</td><td>${BUILDINGS[b].desc}</td><td>${costText(BUILDINGS[b].cost)}</td><td>${BUILDINGS[b].unlock<=1?'Start':'Season '+BUILDINGS[b].unlock}</td></tr>`).join('');
+  const bRows=Object.keys(BUILDINGS).filter(b=>!BUILDINGS[b].online||ON.on).map(b=>`<tr><td><span class="swatch" style="background:${BUILDINGS[b].color};display:inline-block"></span> ${BUILDINGS[b].name}</td><td>${BUILDINGS[b].desc}</td><td>${costText(BUILDINGS[b].cost)}</td><td>${BUILDINGS[b].unlock<=1?'Start':'Season '+BUILDINGS[b].unlock}</td></tr>`).join('');
   const pRows=Object.entries(SUGG).map(([k,T])=>`<tr><td>${T.t}</td><td>${T.type==='guard'?{storm:'Stops heavy storms soaking the stores',raid:'Turns raiders away',wolves:'Keeps wolves out'}[T.guard]:T.type==='gate'?'Keeps newcomers out while a plague’s sickness lingers':(T.type==='room'?'Land cleared for more people to live on':RTITLE[T.type].replace(/^./,c=>c.toUpperCase()))}</td><td>${T.gateCost?'Newcomers wait 4 months':T.mood?`${T.mood.amt} ${T.mood.k==='sat'?'satisfaction':'health'} for everyone`:T.type==='guard'?`about a third of what it protects, in ${T.res.map(r=>STORE_NAME[r]).join(' or ')}`:`${Math.round(T.frac*100)}% of the ${T.res.map(r=>STORE_NAME[r]).join(' or ')}`}</td><td>${RISK[T.risk].name}</td></tr>`).join('');
   return `<h3>A season</h3>
   <p><b>Plan</b> the roles and buildings, <b>run</b> twelve months, collect and analyse the data in the <b>ledger</b>, then hear your advisors at the <b>leader’s table</b> and decide what to do about each issue the data raises. The last season (Season 6, or Season 3 in the short game) ends with the ledger, and your final population.</p>
@@ -48600,20 +48622,42 @@ const ON_DECLARE = { food: 8, materials: 4 }, ON_RAID = { food: 6 }, ON_GIFT = 1
 
 function onServer() {
   let s = '';
-  try { s = new URLSearchParams(location.search).get('server') || localStorage.getItem('sl-server') || ''; } catch (e) {}
+  try { const q = new URLSearchParams(location.search).get('server'); if (q) localStorage.setItem('sl-server', q); s = q || localStorage.getItem('sl-server') || ''; } catch (e) {}
   s = (s || SL_SERVER || '').trim().replace(/\/+$/, '');
   return s.replace(/^https:/i, 'wss:').replace(/^http:/i, 'ws:');
 }
 function onSend(m) { if (ON.ws && ON.ws.readyState === 1) ON.ws.send(JSON.stringify(m)); }
-function onStats() {
-  return { pop: peopleCount(), soldiers: roleCounts().soldier || 0, towers: completed('watchtower'), knowledge: Math.floor(state.resources.knowledge || 0),
-    food: Math.floor(state.resources.food), materials: Math.floor(state.resources.materials), built: state.buildings.filter(b => b.progress >= 1 && !b.start).length };
+const ON_UNITS = [
+  { k: 'spear', name: 'Spearmen', from: 2, atk: 1, def: 1.3, cost: { materials: 10, food: 4 }, need: 'barracks', n: 1 },
+  { k: 'archer', name: 'Archers', from: 3, atk: 1.8, def: 1.6, cost: { materials: 14, food: 6 }, need: 'barracks', n: 1 },
+  { k: 'horse', name: 'Horsemen', from: 4, atk: 3.4, def: 1.8, cost: { materials: 22, food: 14 }, need: 'stables', n: 1 },
+  { k: 'catapult', name: 'Catapults', from: 5, atk: 6, def: 0.5, cost: { materials: 34, food: 8 }, need: 'workshop', n: 1 },
+  { k: 'champion', name: 'Champions', from: 6, atk: 5, def: 5, cost: { materials: 40, food: 30 }, need: 'barracks', n: 2 },
+];
+const ON_UNLOCKS = { 2: 'New buildings: barracks and palisade. Spearmen can be recruited. Check the Army button.', 3: 'New buildings: tavern, forge and harbour. Archers join, and a harbour lets your boats cross the river.', 4: 'New buildings: stables and stone wall. Horsemen can charge.', 5: 'New building: siege workshop. Catapults smash defences.', 6: 'New building: the Great Monument. Champions will fight for you.' };
+const ON_NEW_IN = { 2: ['barracks', 'palisade'], 3: ['tavern', 'forge', 'harbour'], 4: ['stables', 'stonewall'], 5: ['workshop'], 6: ['monument'] };
+function onSetNewIn(on) { Object.keys(ON_NEW_IN).forEach(y => { const a = NEW_IN[y].buildings; ON_NEW_IN[y].forEach(b => { const i = a.indexOf(b); if (i >= 0) a.splice(i, 1); if (on) a.push(b); }); }); }
+function onArmy() {
+  const A = state.army || {}, cnt = (t) => state.buildings.filter(b => b.type === t && b.progress >= 1).length;
+  let att = 0, def = 0, units = 0;
+  ON_UNITS.forEach(u => { const c = A[u.k] || 0; units += c; att += c * u.atk; def += c * u.def; });
+  const sol = roleCounts().soldier || 0;
+  att = (att + sol) * (1 + 0.15 * Math.min(3, cnt('forge')));
+  def = def + sol * 1.1 + cnt('palisade') * 1.5 + Math.min(8, cnt('stonewall')) * 4 + cnt('watchtower') * 3;
+  return { att: Math.round(att * 10) / 10, def: Math.round(def * 10) / 10, units, cap: cnt('barracks') * 6, boats: cnt('harbour'), wonder: cnt('monument'), cnt };
 }
-function onlineStats() { if (ON.on && ON.started && !ON.finished) onSend({ t: 'stats', stats: onStats() }); }
+function onStats() {
+  const a = onArmy();
+  return { pop: peopleCount(), soldiers: roleCounts().soldier || 0, towers: completed('watchtower'), knowledge: Math.floor(state.resources.knowledge || 0),
+    food: Math.floor(state.resources.food), materials: Math.floor(state.resources.materials), built: state.buildings.filter(b => b.progress >= 1 && !b.start).length,
+    att: a.att, def: a.def, units: a.units, boats: a.boats, wonder: a.wonder,
+    map: state.buildings.filter(b => b.progress >= 1 && b.type !== 'bridge').slice(0, 90).map(b => [b.type, b.gx, b.gy]) };
+}
+function onlineStats() { if (ON.on && ON.started && !ON.finished) { onSend({ t: 'stats', stats: onStats() }); if (ON_UNLOCKS[state.year] && ON.noted !== state.year) { ON.noted = state.year; addLog(ON_UNLOCKS[state.year], 'good'); setMsg(ON_UNLOCKS[state.year]); } } }
 const onKey = (a, b) => (a < b ? a + '-' + b : b + '-' + a);
 const onAtWar = (b) => !!(ON.room && ON.room.relations[onKey(ON.slot, b)] === 'war');
 const onName = (s) => { const p = ON.room && ON.room.players.find(x => x.slot === s); return p ? p.name : 'Player ' + (s + 1); };
-function onCode() { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; let c = ''; for (let i = 0; i < 4; i++) c += A[Math.floor(Math.random() * A.length)]; return c; }
+function onCode() { return String(1000 + Math.floor(Math.random() * 9000)); }
 
 /* ---------- connection ---------- */
 function onOpen(first, cb) {
@@ -48659,6 +48703,12 @@ function onMsg(m) {
     state.resources[m.res] = (state.resources[m.res] || 0) + m.amt;
     addLog(`${m.name} sent you ${m.amt} ${m.res}.`, 'good'); setMsg(`${m.name} sent you ${m.amt} ${m.res}.`); renderAll(); return;
   }
+  if (m.t === 'prize') {
+    const R = state.resources; Object.keys(m.reward).forEach(k => { if (k === 'sat') state.people.forEach(p => { if (p.alive && !p.isLeader) p.sat = clamp(p.sat + m.reward[k], 0, 100); }); else R[k] = (R[k] || 0) + m.reward[k]; });
+    const txt = `You dug up ${m.text.toLowerCase()}: ${Object.keys(m.reward).map(k => m.reward[k] + ' ' + (k === 'sat' ? 'satisfaction' : k)).join(', ')}.`;
+    addLog(txt, 'good'); setMsg(txt); ON.eggs.push({ k: 'party', t0: performance.now() }); renderAll(); return;
+  }
+  if (m.t === 'egg') { ON.eggs.push({ k: m.k, t0: performance.now(), name: m.name }); ON.feed.push(`${m.name} summoned ${m.k === 'dragon' ? 'a dragon' : m.k === 'ducks' ? 'the ducks' : m.k === 'party' ? 'a party' : 'Nessie'}!`); ON.unseen++; onHudDraw(); onWorldDraw(); return; }
   if (m.t === 'board') { ON.room = m.room; onBoard(); return; }
 }
 function onNewWars(had) {
@@ -48687,8 +48737,10 @@ function onBegin(base) {
   el('onSetup').classList.add('hide');
   let done = false; try { done = localStorage.getItem(TUT_KEY) === '1'; } catch (e) {}
   if (!done) tutStart(0);
+  onSetNewIn(true); state.army = state.army || {};
   onHudDraw(); onlineStats();
-  setMsg(`You are ${ON.room.players[ON.slot].name}. Plot ${ON.slot + 1} of ${ON.room.players.length}.`);
+  setMsg(`You are ${ON.room.players[ON.slot].name}, on the ${['red', 'blue', 'green', 'gold'][ON.slot]} island.`);
+  setTimeout(() => onWorld(), 400);
 }
 function onHostStart() {
   const mode = ON.mode;
@@ -48718,14 +48770,14 @@ function onHostStart() {
     box.innerHTML = `<div class="mp-row"><label>Name</label><input class="mp-in" id="onName" maxlength="16" value="${esc(cfg.name)}" placeholder="Your name"></div>
       ${needServer ? `<div class="mp-row"><label>Server</label><input class="mp-in" id="onServer" value="${esc(onServer())}" placeholder="wss://gridlines-fun-server.your-name.workers.dev"></div>` : ''}
       <div class="mp-row"><label>Length</label>${[['3', 'Three seasons'], ['6', 'Six seasons'], ['E', 'Endless']].map(([k, t]) => `<button class="btn small ${cfg.mode === k ? 'btn-primary' : ''}" data-m="${k}" type="button">${t}</button>`).join('')}<button class="btn" id="onCreate" type="button">Create room</button></div>
-      <div class="mp-row"><label>Join</label><input class="mp-in" id="onCode" maxlength="4" value="${esc(cfg.code)}" placeholder="Room code" style="text-transform:uppercase"><button class="btn btn-primary" id="onJoin" type="button">Join room</button></div>
+      <div class="mp-row"><label>Join</label><input class="mp-in" id="onCode" maxlength="4" value="${esc(cfg.code)}" placeholder="4-digit code" inputmode="numeric" pattern="[0-9]*"><button class="btn btn-primary" id="onJoin" type="button">Join room</button></div>
       ${cfg.err ? `<p class="note" style="margin:0;color:var(--bad,#b3261e)">${esc(cfg.err)}</p>` : ''}
       <div class="btn-row">${onServer() && !needServer ? '<button class="btn small" id="onEditServer" type="button">Change server</button>' : ''}<button class="btn" id="onBack" type="button">Back</button></div>`;
   };
   const grab = () => {
     const n = el('onName'); if (n) { cfg.name = n.value.trim(); try { localStorage.setItem('sl-on-name', cfg.name); } catch (e) {} }
     const s = el('onServer'); if (s && s.value.trim()) { try { localStorage.setItem('sl-server', s.value.trim()); } catch (e) {} cfg.editServer = false; }
-    const c = el('onCode'); if (c) cfg.code = c.value.trim().toUpperCase();
+    const c = el('onCode'); if (c) cfg.code = c.value.trim();
   };
   box.addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
@@ -48742,7 +48794,7 @@ function onHostStart() {
     }
     if (b.id === 'onJoin') {
       grab(); if (!cfg.name) { onLobbyDraw('Enter a name first.'); return; }
-      if (!/^[A-Z]{4}$/.test(cfg.code)) { onLobbyDraw('Room codes are four letters.'); return; }
+      if (!/^\d{4}$/.test(cfg.code)) { onLobbyDraw('Room codes are four digits.'); return; }
       ON.name = cfg.name; ON.code = cfg.code; ON.leaving = false;
       let tok = ''; try { tok = localStorage.getItem('sl-on-token-' + ON.code) || ''; } catch (x) {}
       onOpen({ t: 'join', code: ON.code, name: ON.name, token: tok });
@@ -48777,20 +48829,43 @@ function onApply(r) {
     pool.slice(0, Math.max(0, Math.min(r.kill, pool.length - 2))).forEach(p => { p.alive = false; });
   }
   for (let i = 0; i < (r.captured || 0); i++) { const p = makePerson('unassigned'); p.sat = ri(30, 45); state.people.push(p); }
+  if (r.unitLoss && state.army) { const keep = Math.max(0, 1 - r.unitLoss); ON_UNITS.forEach(u => { state.army[u.k] = Math.floor((state.army[u.k] || 0) * keep); }); }
   onTrimAlloc(); syncWalkers(); mapChanged();
 }
+/* what the buildings give each season, and what the army eats */
+function onPassive() {
+  const a = onArmy(), lines = [], R = state.resources, c = a.cnt;
+  const tav = Math.min(2, c('tavern')), har = c('harbour'), mon = Math.min(1, c('monument'));
+  if (tav) { onApply({ sat: 4 * tav }); lines.push(`The tavern keeps spirits up (${4 * tav} satisfaction).`); }
+  if (har) { R.food += 4 * har; lines.push(`Fishing boats bring in ${4 * har} food.`); }
+  if (mon) { onApply({ sat: 5, health: 3 }); lines.push('The Great Monument fills everyone with pride.'); }
+  if (a.units) {
+    const need = a.units;
+    if (R.food >= need) { R.food -= need; lines.push(`The army eats ${need} food.`); }
+    else { const keep = Math.max(0, R.food) / need; R.food = 0; ON_UNITS.forEach(u => { state.army[u.k] = Math.floor((state.army[u.k] || 0) * keep); }); lines.push('There is not enough food for the army, and hungry soldiers desert.'); }
+  }
+  return lines;
+}
 function onGo(m) {
-  ON.wait = false; onWaitDraw();
+  ON.wait = false; ON.attack = null; onWaitDraw();
   if (!ON.started || ON.finished) return;
   if (state.phase !== 'plan') return;
   const r = m.results && m.results[ON.slot];
   let lines = [];
-  if (r) { onApply(r); lines = r.lines || []; lines.forEach(l => addLog(l, /lost|raided|failed|Plague|Dry/.test(l) ? 'bad' : 'good')); }
+  if (r) { onApply(r); lines = (r.lines || []).slice(); lines.forEach(l => addLog(l, /lost|raided|failed|Plague|Dry|pirates|Pirates/.test(l) ? 'bad' : 'good')); }
   if (m.event && !lines.some(l => l.indexOf(m.event.title) === 0)) lines.push(`${m.event.title}: ${m.event.text}`);
+  if (!m.late) lines.push(...onPassive());
   ON.go = true; try { startYear(); } finally { ON.go = false; }
-  if (lines.length && state.phase === 'sim') {
+  const battles = (m.battles || []);
+  if (state.phase === 'sim' && (lines.length || battles.length)) {
     state.simPaused = true; renderSim();
-    onReport(`Season ${state.year} begins`, lines, () => { state.simPaused = false; renderSim(); scheduleMonth(); });
+    const resume = () => { state.simPaused = false; renderSim(); scheduleMonth(); };
+    if (battles.length) {   /* the armies cross the river on the shared map, then the report appears */
+      const now = performance.now();
+      battles.forEach((b, i) => ON.anim.push({ a: b.a, d: b.d, win: b.win, t0: now + i * 600 }));
+      onWorld(true);
+      setTimeout(() => { el('worldMap').classList.add('hide'); onReport(`Season ${state.year} begins`, lines, resume); }, 3600 + battles.length * 600);
+    } else onReport(`Season ${state.year} begins`, lines, resume);
   }
   onHudDraw();
 }
@@ -48813,48 +48888,125 @@ function onWaitDraw(text) {
 }
 el('onWait').addEventListener('click', (e) => { const a = e.target.dataset.act; if (a === 'skip') onSend({ t: 'skip' }); if (a === 'world') onWorld(); });
 
-/* ---------- the shared map ---------- */
+/* ---------- the shared map: one world, an island each, the river between ---------- */
+function onIslands(n) {
+  if (n === 2) return [[30, 50, 300, 340], [390, 50, 300, 340]];
+  if (n === 3) return [[30, 15, 300, 195], [390, 15, 300, 195], [210, 235, 300, 195]];
+  return [[30, 15, 300, 195], [390, 15, 300, 195], [30, 235, 300, 195], [390, 235, 300, 195]];
+}
+function onSpots(n) {   /* places in the river where something can turn up */
+  if (n === 2) return [[360, 110], [360, 220], [360, 330]];
+  if (n === 3) return [[360, 70], [360, 160], [180, 222], [540, 222], [360, 225]];
+  return [[360, 70], [360, 160], [360, 300], [360, 390], [180, 222], [540, 222], [360, 222]];
+}
+const onRng = (seed) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 function onHudDraw() {
-  const wb = el('worldBtn'); if (!wb) return;
-  wb.classList.toggle('hide', !(ON.on && ON.started));
+  const wb = el('worldBtn'), ab = el('armyBtn'); if (!wb) return;
+  const live = ON.on && ON.started;
+  wb.classList.toggle('hide', !live); ab.classList.toggle('hide', !live);
   wb.textContent = ON.unseen ? `World (${Math.min(ON.unseen, 9)}${ON.unseen > 9 ? '+' : ''})` : 'World';
 }
-function onWorld() { ON.unseen = 0; onHudDraw(); el('worldMap').classList.remove('hide'); onWorldDraw(); }
+function onWorld(auto) {
+  if (!auto) { ON.unseen = 0; onHudDraw(); }
+  el('worldMap').classList.remove('hide'); onWorldDraw();
+  if (!ON.raf) ON.raf = requestAnimationFrame(onWorldFrame);
+}
+function onWorldFrame(ts) {
+  const cv = el('worldCanvas');
+  if (!cv || el('worldMap').classList.contains('hide') || !ON.room) { ON.raf = 0; return; }
+  const g = cv.getContext('2d'), t = ts / 1000, R = ON.room, n = R.players.length, isl = onIslands(n), W = cv.width, H = cv.height;
+  const grad = g.createLinearGradient(0, 0, 0, H); grad.addColorStop(0, '#86c8ec'); grad.addColorStop(1, '#5aa4d4'); g.fillStyle = grad; g.fillRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1.5;
+  for (let y = 14; y < H; y += 26) { g.beginPath(); for (let x = 0; x <= W; x += 12) { const yy = y + Math.sin(x / 38 + t * 1.3 + y) * 2.2; x ? g.lineTo(x, yy) : g.moveTo(x, yy); } g.stroke(); }
+  const ctr = (slot) => { const r = isl[slot]; return [r[0] + r[2] / 2, r[1] + r[3] / 2]; };
+  R.players.forEach(p => {
+    const r = isl[p.slot], col = ON_COLORS[p.slot], st = p.stats || {}, me = p.slot === ON.slot;
+    g.fillStyle = '#ead9a6'; g.beginPath(); g.roundRect(r[0] - 9, r[1] - 9, r[2] + 18, r[3] + 18, 54); g.fill();
+    g.fillStyle = '#b6dc8f'; g.beginPath(); g.roundRect(r[0], r[1], r[2], r[3], 46); g.fill();
+    g.lineWidth = me ? 5 : 3; g.strokeStyle = col; g.stroke();
+    const rnd = onRng(97 + p.slot * 31);
+    for (let i = 0; i < 16; i++) { const x = r[0] + 24 + rnd() * (r[2] - 48), y = r[1] + 40 + rnd() * (r[3] - 70); g.fillStyle = '#4f9a58'; g.beginPath(); g.arc(x, y, 5 + rnd() * 3, 0, 7); g.fill(); }
+    const ix = r[0] + 22, iy = r[1] + 40, sx = (r[2] - 44) / 15, sy = (r[3] - 62) / 11;
+    (st.map || []).forEach(([type, gx, gy]) => {
+      const def = BUILDINGS[type] || { color: '#999' }, sz = def.size || [1, 1], x = ix + gx * sx, y = iy + gy * sy, w = sz[0] * sx * .9, h = sz[1] * sy * .9;
+      g.fillStyle = def.color; g.strokeStyle = '#2b2018'; g.lineWidth = 1; g.beginPath(); g.roundRect(x, y, w, h, 2); g.fill(); g.stroke();
+      if (type === 'shelter' || type === 'barracks' || type === 'tavern') { g.fillStyle = type === 'barracks' ? '#8e3b2e' : '#c4572e'; g.beginPath(); g.moveTo(x - 1, y + 1); g.lineTo(x + w / 2, y - 5); g.lineTo(x + w + 1, y + 1); g.fill(); }
+    });
+    const dots = Math.min(34, st.pop || 0), rd = onRng(7 + p.slot);
+    for (let i = 0; i < dots; i++) { const bx = r[0] + 30 + rd() * (r[2] - 60), by = r[1] + 46 + rd() * (r[3] - 80); g.fillStyle = col; g.beginPath(); g.arc(bx + Math.sin(t * .8 + i) * 3, by + Math.cos(t * .7 + i * 2) * 2, 2.4, 0, 7); g.fill(); }
+    if (st.boats) { const bx = r[0] < 360 ? r[0] + r[2] + 20 : r[0] - 20, by = r[1] + r[3] / 2 + Math.sin(t * 1.5 + p.slot) * 4; g.fillStyle = '#8a5f38'; g.fillRect(bx - 9, by, 18, 5); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx, by - 13); g.lineTo(bx + 8, by - 3); g.fill(); }
+    g.fillStyle = col; g.beginPath(); g.roundRect(r[0] + 8, r[1] + 6, 168, 25, 12); g.fill();
+    g.fillStyle = '#fff'; g.font = '700 13px sans-serif'; g.textBaseline = 'middle'; g.fillText(`${p.name}${me ? ' (you)' : ''}  ${st.pop == null ? '' : st.pop}`, r[0] + 18, r[1] + 19);
+    g.fillStyle = '#243142'; g.font = '600 11px sans-serif'; g.textAlign = 'right'; g.fillText(p.done ? 'FINISHED' : !p.connected ? 'DISCONNECTED' : st.att != null ? `Att ${st.att}  Def ${st.def}` : '', r[0] + r[2] - 14, r[1] + r[3] - 12); g.textAlign = 'left';
+  });
+  Object.keys(R.relations).forEach(k => {
+    if (R.relations[k] !== 'war') return; const [a, b] = k.split('-').map(Number), A = ctr(a), B = ctr(b), mx = (A[0] + B[0]) / 2, my = (A[1] + B[1]) / 2;
+    g.strokeStyle = '#b3261e'; g.lineWidth = 4; g.setLineDash([10, 7]); g.lineDashOffset = -t * 20; g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(B[0], B[1]); g.stroke(); g.setLineDash([]);
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(mx, my, 13, 0, 7); g.fill(); g.strokeStyle = '#b3261e'; g.lineWidth = 3; g.beginPath(); g.moveTo(mx - 7, my - 7); g.lineTo(mx + 7, my + 7); g.moveTo(mx + 7, my - 7); g.lineTo(mx - 7, my + 7); g.stroke();
+  });
+  const spots = onSpots(n);
+  if (R.treasure) {
+    const [x, y] = spots[R.treasure.spot % spots.length], pulse = 1 + Math.sin(t * 4) * .15;
+    g.fillStyle = 'rgba(255,230,120,.45)'; g.beginPath(); g.arc(x, y, 24 * pulse, 0, 7); g.fill();
+    g.strokeStyle = R.treasure.kind === 'monster' ? '#1f6b3a' : '#7a3b12'; g.lineWidth = 5; g.lineCap = 'round';
+    if (R.treasure.kind === 'monster') { g.beginPath(); g.arc(x - 8, y + 4, 8, Math.PI, 0); g.arc(x + 8, y + 4, 8, Math.PI, 0); g.stroke(); }
+    else if (R.treasure.kind === 'idol') { g.fillStyle = '#e0a33e'; g.beginPath(); g.arc(x, y - 4, 8, 0, 7); g.fill(); g.fillRect(x - 6, y + 2, 12, 10); }
+    else { g.beginPath(); g.moveTo(x - 9, y - 9); g.lineTo(x + 9, y + 9); g.moveTo(x + 9, y - 9); g.lineTo(x - 9, y + 9); g.stroke(); }
+    g.fillStyle = '#fff'; g.font = '700 11px sans-serif'; g.textAlign = 'center'; g.fillText('Click to dig!', x, y + 34); g.textAlign = 'left';
+  }
+  const now = performance.now();
+  ON.anim = ON.anim.filter(a => now - a.t0 < 3400);
+  ON.anim.forEach(a => {
+    const p = Math.max(0, Math.min(1, (now - a.t0) / 2200)); if (now < a.t0) return;
+    const A = ctr(a.a), B = ctr(a.d), x = A[0] + (B[0] - A[0]) * p, y = A[1] + (B[1] - A[1]) * p;
+    if (p < 1) { for (let i = 0; i < 6; i++) { g.fillStyle = ON_COLORS[a.a]; g.fillRect(x - 12 + (i % 3) * 8, y - 6 + Math.floor(i / 3) * 9 + Math.sin(t * 12 + i) * 1.5, 5, 7); } g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.moveTo(x + 14, y - 14); g.lineTo(x + 14, y + 4); g.stroke(); }
+    else { const q = (now - a.t0 - 2200) / 1200; g.strokeStyle = a.win === 'a' ? ON_COLORS[a.a] : a.win === 'd' ? ON_COLORS[a.d] : '#555'; g.lineWidth = 4; g.beginPath(); g.arc(B[0], B[1], 20 + q * 60, 0, 7); g.stroke(); g.fillStyle = '#fff'; g.font = '700 16px sans-serif'; g.textAlign = 'center'; g.fillText(a.win === 'a' ? `${onName(a.a)} wins!` : a.win === 'd' ? `${onName(a.d)} holds!` : 'Stalemate', B[0], B[1] - 30 - q * 10); g.textAlign = 'left'; }
+  });
+  ON.eggs = ON.eggs.filter(e => now - e.t0 < 6500);
+  ON.eggs.forEach(e => {
+    const q = (now - e.t0) / 6500;
+    if (e.k === 'dragon') { const x = -80 + q * (W + 160), y = 90 + Math.sin(q * 9) * 24; g.fillStyle = '#7a1f2b'; g.beginPath(); g.ellipse(x, y, 34, 11, 0, 0, 7); g.fill(); g.beginPath(); g.arc(x + 36, y - 4, 9, 0, 7); g.fill(); g.fillStyle = '#b3402e'; g.beginPath(); g.moveTo(x - 6, y - 4); g.lineTo(x + 12, y - 40 + Math.sin(t * 14) * 10); g.lineTo(x + 24, y - 4); g.fill(); g.fillStyle = '#f4a23a'; g.beginPath(); g.moveTo(x + 46, y - 4); g.lineTo(x + 70 + Math.random() * 10, y - 8); g.lineTo(x + 46, y + 2); g.fill(); }
+    else if (e.k === 'ducks') { for (let i = 0; i < 7; i++) { const sp = onSpots(n)[i % onSpots(n).length], x = sp[0] + Math.sin(t + i) * 22, y = ((q * 440 * 1.1 + i * 60) % 460); g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(sp[0] + Math.sin(t * 2 + i) * 14, y, 7, 0, 7); g.fill(); g.fillStyle = '#f08a24'; g.fillRect(sp[0] + 6 + Math.sin(t * 2 + i) * 14, y - 1, 6, 3); } }
+    else if (e.k === 'party') { const rnd = onRng(Math.floor(e.t0) % 999 + 1); for (let i = 0; i < 70; i++) { const x = rnd() * W, y = ((rnd() * H + q * 380) % H); g.fillStyle = ['#e4572e', '#f4c542', '#2e6a9c', '#2e7d5b', '#b04aa5'][i % 5]; g.fillRect(x + Math.sin(t * 3 + i) * 6, y, 6, 9); } }
+    else if (e.k === 'nessie') { const sp = onSpots(n)[0], k = Math.sin(q * Math.PI); g.strokeStyle = '#1f6b3a'; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); g.moveTo(sp[0] - 40, sp[1] + 10); g.quadraticCurveTo(sp[0] - 20, sp[1] - 38 * k, sp[0], sp[1] + 8); g.quadraticCurveTo(sp[0] + 18, sp[1] - 52 * k, sp[0] + 38, sp[1] + 8); g.stroke(); g.fillStyle = '#1f6b3a'; g.beginPath(); g.arc(sp[0] + 38, sp[1] - 8 * k, 8, 0, 7); g.fill(); }
+  });
+  ON.raf = requestAnimationFrame(onWorldFrame);
+}
+el('worldCanvas').addEventListener('click', (e) => {
+  const cv = e.target, rc = cv.getBoundingClientRect(), x = (e.clientX - rc.left) * cv.width / rc.width, y = (e.clientY - rc.top) * cv.height / rc.height;
+  const R = ON.room; if (!R || !R.treasure || ON.finished) return;
+  const sp = onSpots(R.players.length), [tx, ty] = sp[R.treasure.spot % sp.length];
+  if (Math.hypot(x - tx, y - ty) < 34) onSend({ t: 'dig', id: R.treasure.id });
+});
+let onTyped = '';
+document.addEventListener('keydown', (e) => {   /* secret words, typed on the world map */
+  if (el('worldMap').classList.contains('hide') || !ON.on || e.target.tagName === 'INPUT' || e.key.length !== 1) return;
+  onTyped = (onTyped + e.key.toLowerCase()).slice(-8);
+  ['dragon', 'ducks', 'party', 'nessie'].forEach(w => { if (onTyped.endsWith(w)) { onSend({ t: 'egg', k: w }); onTyped = ''; } });
+});
 function onWorldDraw() {
   const modal = el('worldMap'); if (!modal || modal.classList.contains('hide') || !ON.room) return;
-  const R = ON.room, ps = R.players, L = R.layout;
-  const W = 600, H = L.n === 2 ? 190 : 330, pw = 250, ph = 130;
-  const pos = (s) => { const p = L.plots[s]; return { x: 30 + p.x * 290, y: (L.n === 2 ? 30 : 15) + p.y * 170 }; };
-  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Plots of the ${ps.length} villages" style="width:100%;height:auto;display:block;background:var(--paper-2,#efe8d8);border-radius:10px">`;
-  Object.keys(R.relations).forEach(k => {
-    if (R.relations[k] !== 'war') return; const [a, b] = k.split('-').map(Number), pa = pos(a), pb = pos(b);
-    svg += `<line x1="${pa.x + pw / 2}" y1="${pa.y + ph / 2}" x2="${pb.x + pw / 2}" y2="${pb.y + ph / 2}" stroke="#b3261e" stroke-width="4" stroke-dasharray="9 6"/>`;
-  });
-  ps.forEach(p => {
-    const q = pos(p.slot), st = p.stats || {}, me = p.slot === ON.slot;
-    svg += `<g><rect x="${q.x}" y="${q.y}" width="${pw}" height="${ph}" rx="14" fill="${ON_COLORS[p.slot]}" fill-opacity=".16" stroke="${ON_COLORS[p.slot]}" stroke-width="${me ? 5 : 2.5}"/>
-      <text x="${q.x + 14}" y="${q.y + 30}" font-size="19" font-weight="700" fill="currentColor">${esc(p.name)}${me ? ' (you)' : ''}</text>
-      <text x="${q.x + 14}" y="${q.y + 58}" font-size="15" fill="currentColor">Settlers ${st.pop == null ? '?' : st.pop}   Soldiers ${st.soldiers || 0}   Towers ${st.towers || 0}</text>
-      <text x="${q.x + 14}" y="${q.y + 82}" font-size="14" fill="currentColor" opacity=".8">Food ${st.food == null ? '?' : st.food}   Materials ${st.materials == null ? '?' : st.materials}</text>
-      <text x="${q.x + 14}" y="${q.y + 110}" font-size="13" font-weight="700" fill="${ON_COLORS[p.slot]}">${p.done ? 'FINISHED' : !p.connected ? 'DISCONNECTED' : p.ready ? 'PLAN LOCKED IN' : 'PLANNING'}</text></g>`;
-  });
-  svg += '</svg>';
+  const R = ON.room, ps = R.players, L = R.layout, panel = el('worldPanel');
+  const chat = el('onChat'), keep = chat ? chat.value : '', focus = chat && document.activeElement === chat;
   const others = ps.filter(p => p.slot !== ON.slot);
   const cards = others.map(p => {
     const war = onAtWar(p.slot), far = L.n === 4 && L.plots[p.slot].x !== L.plots[ON.slot].x && L.plots[p.slot].y !== L.plots[ON.slot].y;
     const offered = R.offers.some(o => o.from === p.slot && o.to === ON.slot), sent = R.offers.some(o => o.from === ON.slot && o.to === p.slot);
     const can = canAfford(ON_DECLARE) && state.year >= 2 && !p.done && !ON.finished;
     const btn = (act, label, dis, extra) => `<button class="btn small ${extra || ''}" data-act="${act}" data-s="${p.slot}" type="button" ${dis ? 'disabled' : ''}>${label}</button>`;
-    return `<div class="note" style="margin:0"><b style="color:${ON_COLORS[p.slot]}">${esc(p.name)}</b> ${war ? '<b style="color:#b3261e">AT WAR</b>' : 'at peace'}${far ? ' (across the border, raids are weaker)' : ''}
+    return `<div class="note" style="margin:0"><b style="color:${ON_COLORS[p.slot]}">${esc(p.name)}</b> ${war ? '<b style="color:#b3261e">AT WAR</b>' : 'at peace'}${far ? ' (across two rivers, raids are weaker)' : ''}
       <div class="mp-row" style="margin-top:6px">${war
-        ? `${btn('peace', offered ? 'Accept peace' : sent ? 'Peace offered' : 'Offer peace', sent && !offered)}${btn('raid', ON.attack === p.slot ? 'Raid planned (cancel)' : 'Raid them this season', p.done || ON.wait, ON.attack === p.slot ? 'btn-primary' : '')}`
+        ? `${btn('peace', offered ? 'Accept peace' : sent ? 'Peace offered' : 'Offer peace', sent && !offered)}${btn('raid', ON.attack === p.slot ? 'Raid planned (cancel)' : 'Send the army this season', p.done || ON.wait, ON.attack === p.slot ? 'btn-primary' : '')}`
         : `${btn('war', `Declare war (${costText(ON_DECLARE)})`, !can)}`}
         ${war || p.done ? '' : btn('gift-food', `Send ${ON_GIFT} food`, state.resources.food < ON_GIFT) + btn('gift-materials', `Send ${ON_GIFT} materials`, state.resources.materials < ON_GIFT)}</div></div>`;
   }).join('');
-  el('worldBody').innerHTML = `${svg}<p class="note" style="margin:8px 0 0">${state.year < 2 ? 'War opens in Season 2. ' : ''}A raid costs ${costText(ON_RAID)} and is settled when everyone starts the next season. Soldiers, watchtowers and knowledge decide who wins.</p>
+  const a = onArmy();
+  panel.innerHTML = `<p class="note" style="margin:8px 0 0">${state.year < 2 ? 'War opens in Season 2. ' : ''}Your army: attack ${a.att}, defence ${a.def}${a.boats ? '' : '. Build a <b>harbour</b> (Season 3) so your boats can cross the river'}. A raid costs ${costText(ON_RAID)} and is settled when everyone starts the next season.</p>
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">${cards}</div>
-    <h3 style="margin:12px 0 4px;font-size:1rem">News</h3><div id="onFeed" style="max-height:130px;overflow:auto;font-size:.88rem">${ON.feed.slice(-12).reverse().map(f => `<div>${esc(f)}</div>`).join('') || '<div class="note">Nothing yet.</div>'}</div>
+    ${R.treasure ? '<p class="note" style="margin:8px 0 0"><b>Something is in the river!</b> Click it on the map to dig it up. First there wins.</p>' : ''}
+    <h3 style="margin:12px 0 4px;font-size:1rem">News</h3><div id="onFeed" style="max-height:120px;overflow:auto;font-size:.88rem">${ON.feed.slice(-12).reverse().map(f => `<div>${esc(f)}</div>`).join('') || '<div class="note">Nothing yet.</div>'}</div>
     <div class="mp-row" style="margin-top:6px"><input class="mp-in" id="onChat" maxlength="140" placeholder="Say something to everyone"><button class="btn small" data-act="chat" type="button">Send</button></div>`;
+  const c2 = el('onChat'); if (c2 && keep) { c2.value = keep; if (focus) { c2.focus(); } }
 }
 el('worldBody').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b || b.disabled) return;
@@ -48867,7 +49019,30 @@ el('worldBody').addEventListener('click', (e) => {
 });
 el('worldBody').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'onChat') { e.preventDefault(); const i = e.target; if (i.value.trim()) { onSend({ t: 'chat', text: i.value }); i.value = ''; } } });
 el('worldClose').addEventListener('click', () => el('worldMap').classList.add('hide'));
-el('worldBtn').addEventListener('click', onWorld);
+el('worldBtn').addEventListener('click', () => onWorld());
+
+/* ---------- the army ---------- */
+function onArmyDraw() {
+  const a = onArmy(), A = state.army || {}, y = state.year;
+  const rows = ON_UNITS.map(u => {
+    const locked = y < u.from, have = a.cnt(u.need) >= u.n, full = a.units >= a.cap, afford = canAfford(u.cost);
+    const why = locked ? `Unlocks in Season ${u.from}` : !have ? `Needs ${u.n > 1 ? u.n + ' ' : 'a '}${BUILDINGS[u.need].name.toLowerCase()}${u.n > 1 ? 's' : ''}` : full ? 'Barracks are full' : !afford ? 'Not enough resources' : '';
+    return `<div class="note" style="margin:0;${locked ? 'opacity:.55' : ''}"><b>${u.name}</b> x ${A[u.k] || 0} <span style="opacity:.8">(attack ${u.atk}, defence ${u.def})</span>
+      <div class="mp-row" style="margin-top:6px"><button class="btn small" data-unit="${u.k}" type="button" ${why ? 'disabled' : ''}>Recruit for ${costText(u.cost)}</button><span style="font-size:.82rem">${why}</span></div></div>`;
+  }).join('');
+  el('armyBody').innerHTML = `<p class="note" style="margin:0">Attack <b>${a.att}</b>, defence <b>${a.def}</b>. Army ${a.units} of ${a.cap} (each barracks holds 6). Harbours: ${a.boats}${a.boats ? '' : ' (you need one to raid across the river)'}. Each soldier eats 1 food a season.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">${rows}</div>
+    <p class="note" style="margin:10px 0 0">Palisade +1.5 defence. Stone wall +4. Watchtower +3. Forge +15% attack (up to 3). Tavern +4 satisfaction a season. Harbour +4 food a season. Great Monument: pride and health every season.</p>`;
+}
+el('armyBtn').addEventListener('click', () => { onArmyDraw(); el('armyModal').classList.remove('hide'); });
+el('armyClose').addEventListener('click', () => el('armyModal').classList.add('hide'));
+el('armyBody').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-unit]'); if (!b || b.disabled) return;
+  const u = ON_UNITS.find(x => x.k === b.dataset.unit), a = onArmy();
+  if (!u || ON.wait || state.year < u.from || a.cnt(u.need) < u.n || a.units >= a.cap || !canAfford(u.cost)) { if (ON.wait) setMsg('Your plan is locked in for this season.'); return; }
+  pay(u.cost); state.army = state.army || {}; state.army[u.k] = (state.army[u.k] || 0) + 1;
+  addLog(`Recruited ${u.name.toLowerCase().replace(/s$/, '')}.`, 'good'); renderAll(); onArmyDraw(); onlineStats();
+});
 
 /* ---------- finishing ---------- */
 function onlineFinish() {
