@@ -49,11 +49,19 @@ cd worker && npm install && npm run local
 Open the game with `?server=ws://localhost:8787` added to its address, in two or more browser windows.
 
 ## How online play works
-- One player creates a room and shares the 4-letter code. The host starts once 2 to 4 have joined. Everyone gets the same valley and settlers.
-- The shared map has one plot per player: two side by side, three in a triangle, four in a square. In the square, corner-to-corner raids are weaker.
-- Each season: plan, then **Run** locks your plan in. When everyone has locked in (the host can press *Don't wait*), the server settles raids and any world event, and all seasons start together.
-- **War** opens in Season 2. Declaring costs 8 food and 4 materials; a raid costs 6 food. Strength comes from soldiers, settlers, watchtowers and knowledge, plus a dice roll, and defenders get a small edge. Winners loot food and materials and may capture settlers. Either side can offer peace.
-- World events: harvests, droughts, festivals, plague in the biggest village, a caravan for the smallest, a rich ore seam.
+- **Joining.** Pick **Play online**, choose a length and create a room. A **4-digit code** appears. Friends open the same page, pick **Play online**, type their name and the code. That is all (the server address is saved in `index.html` as `SL_SERVER`).
+- **The world.** One map: four real village islands in a square, a river up the middle and across, rock walls all round, and Mr Lovegrove, The Watcher standing on the top wall where the river meets it. Every player gets their own randomly made island (a finer grid than solo, with no river and no bridge) and everyone sees everyone's island live: buildings, trees, roads and settlers.
+- **Zoom.** One button zooms in to your island (it takes you back into your real village) and zooms out to the whole world. Click any other island to look at its live board; the war buttons are at the top.
+- **Seasons.** Everyone plans, then **Run** locks the plan in. When all have locked in (the host can press *Don't wait*) the server settles raids and events and all seasons start together.
+- **War.** Opens in Season 2. Declare war (8 food and 4 materials), then send the army (6 food); you need a harbour or a warship to cross the river. Strength comes from soldiers, units, defences, knowledge and a dice roll. Winners loot food and materials and may capture settlers. Either side can offer peace.
+- **Conquest.** A raid that leaves almost nobody standing takes the island. The loser is out, the winner gets some of their settlers and a second island to look at with the **View island** buttons.
+- **Army** (button in the top bar). Spearmen (Season 2), archers (3), horsemen and warships (4), catapults and cannons (5), champions and tanks (6). Barracks hold 6 land units, shipyards hold 4 ships, units eat food each season and desert if you cannot feed them.
+- **Buildings that unlock by season (online only).** Barracks and palisade (2), tavern, forge and harbour (3), stables, stone wall and shipyard (4), siege workshop, foundry and fortress (5), the Great Monument and factory (6).
+- **Traders.** One of thirteen traders docks each season (Alex, Joe, Noah, Abdullah, Karas, Oscar, Cooper, Jonah, Moses, Harry, Kiro, Patty, Lucas) and what is on their cart depends on who they are. About 1.5% of the time two arrive together with rare goods. Stock is limited, first come first served. Click the boat to shop.
+- **The Watcher.** Using `ans123` in an online game costs 10 materials and 5 food, shoots lasers at your island on everyone's map and tells every player "The Watcher has caught a cheater". Click him for a surprise.
+- **World events:** harvest, drought, festival, plague, caravan, ore seam, pirates, a royal wedding, a comet, a silver fish run.
+- **Treasure:** most seasons something turns up in the river. Click it on the map; the first player to dig it up wins the prize.
+- **Easter eggs:** with the world map open, type `dragon`, `ducks`, `party`, `nessie`, `tank` or `armada`.
 - The biggest village at the end wins.
 
 ## Limits worth knowing

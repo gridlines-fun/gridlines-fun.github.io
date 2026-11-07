@@ -4098,6 +4098,11 @@ html[data-theme="dark"] #game .hero{ background:linear-gradient(#1C3B57,#27506F 
 #game .mp-art svg{width:100%;height:auto;display:block}
 #game .on-wait{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:350;background:var(--white,#fff);color:var(--ink,#1c2430);border:1px solid var(--line,#ccc);border-radius:12px;padding:8px 14px;box-shadow:0 6px 24px rgba(0,0,0,.18);display:flex;gap:10px;align-items:center;flex-wrap:wrap;max-width:94vw;font-size:.92rem}
 #game .on-wait.hide{display:none}
+#game .watcher-banner{position:fixed;bottom:9%;left:50%;transform:translateX(-50%);z-index:520;pointer-events:none;background:rgba(40,0,0,.92);color:#fff;border:3px solid #ff3030;border-radius:14px;padding:16px 28px;text-align:center;display:flex;flex-direction:column;gap:4px;box-shadow:0 0 40px 10px rgba(255,40,40,.55);animation:wb .5s infinite alternate;max-width:92vw}
+#game .watcher-banner b{font-size:1.5rem;text-shadow:0 0 12px #ff5a5a}
+#game .watcher-banner span{font-size:1.1rem;color:#ffb3b3}
+#game .watcher-banner.hide{display:none}
+@keyframes wb{from{box-shadow:0 0 24px 4px rgba(255,40,40,.4)}to{box-shadow:0 0 56px 16px rgba(255,40,40,.8)}}
 </style>
 </head>
 <body>
@@ -4177,12 +4182,18 @@ html[data-theme="dark"] #game .hero{ background:linear-gradient(#1C3B57,#27506F 
   <div class="on-wait hide" id="onWait" role="status"></div>
 
   <div class="modal-back hide" id="worldMap" style="z-index:410">
-    <div class="modal wide" role="dialog" aria-labelledby="worldTitle" style="width:min(1100px,96vw);max-width:none"><h2 id="worldTitle">The shared map</h2><div id="worldBody"><div class="mp-row" id="worldZoom" style="margin-bottom:6px"><button class="btn small" data-zoom="all" type="button">Whole map</button><button class="btn small" data-zoom="me" type="button">My island</button><span id="worldHint" class="note" style="margin:0">Click an island to zoom in on it.</span></div><canvas id="worldCanvas" width="1152" height="704" style="width:100%;height:auto;border-radius:10px;display:block;cursor:default" aria-label="The shared world map. Click an island to zoom in."></canvas><div id="worldPanel"></div></div><div class="btn-row"><button class="btn btn-primary" id="worldClose" type="button">Close</button></div></div>
+    <div class="modal wide" role="dialog" aria-labelledby="worldTitle" style="width:min(1100px,96vw);max-width:none"><h2 id="worldTitle">The shared map</h2><div id="worldBody"><div class="mp-row" id="worldZoom" style="margin-bottom:6px"><button class="btn btn-primary small" id="worldZoomBtn" type="button">Zoom in to view your island</button><span id="islandBtns" class="mp-row" style="gap:6px"></span><span id="worldHint" class="note" style="margin:0">Or click any island to look at it.</span></div><div class="mp-row" id="worldBar" style="margin-bottom:6px"></div><canvas id="worldCanvas" width="1152" height="704" style="width:100%;height:auto;border-radius:10px;display:block;cursor:default" aria-label="The shared world map. Click an island to zoom in."></canvas><div id="worldPanel"></div></div><div class="btn-row"><button class="btn btn-primary" id="worldClose" type="button">Close</button></div></div>
   </div>
 
   <div class="modal-back hide" id="armyModal" style="z-index:415">
     <div class="modal wide" role="dialog" aria-labelledby="armyTitle"><h2 id="armyTitle">Your army</h2><div id="armyBody"></div><div class="btn-row"><button class="btn btn-primary" id="armyClose" type="button">Close</button></div></div>
   </div>
+
+  <div class="modal-back hide" id="merchantModal" style="z-index:416">
+    <div class="modal wide" role="dialog" aria-labelledby="merchantTitle"><h2 id="merchantTitle">The trading boat</h2><div id="merchantBody"></div><div class="btn-row"><button class="btn btn-primary" id="merchantClose" type="button">Close</button></div></div>
+  </div>
+
+  <div class="watcher-banner hide" id="watcherBanner" role="alert"><b>The Watcher has caught a cheater</b><span id="watcherSub"></span></div>
 
   <div class="modal-back hide" id="onReport" style="z-index:430">
     <div class="modal" role="dialog" aria-labelledby="onReportTitle"><h2 id="onReportTitle"></h2><div id="onReportBody"></div><div class="btn-row"><button class="btn btn-primary" id="onReportGo" type="button">Carry on</button></div></div>
@@ -44202,7 +44213,7 @@ const state={
    skills of seasons two to six so the ledger keeps asking different things */
 function yd(y){if(y<=6)return YEARS[y];const k=((y-2)%5)+2;return Object.assign({},YEARS[6],{title:'The Long Road',skill:YEARS[k].skill,focus:YEARS[k].focus,story:'The village has settled in for the long haul. Keep it fed, housed and growing for as long as you like, and stop whenever you want.'});}
 const MP={on:false,players:[],cur:0,mode:'6',names:[]};
-const ON = { on: false, started: false, joined: false, ws: null, code: '', slot: -1, token: '', name: '', host: false, mode: '6', room: null, wait: false, go: false, attack: null, feed: [], unseen: 0, retry: 0, leaving: false, finished: false, pending: null, eggs: [], anim: [], raf: 0, noted: 0 };
+const ON = { on: false, started: false, joined: false, ws: null, code: '', slot: -1, token: '', name: '', host: false, mode: '6', room: null, wait: false, go: false, attack: null, feed: [], unseen: 0, retry: 0, leaving: false, finished: false, pending: null, eggs: [], anim: [], raf: 0, noted: 0, bd: {} };
 let NOQ=(()=>{try{return localStorage.getItem('sl-noq')==='1';}catch(e){return false;}})();
 function noQ(){return NOQ;}
 function capFirst(s){return s.charAt(0).toUpperCase()+s.slice(1);}
@@ -44212,7 +44223,7 @@ function el(id){return document.getElementById(id);}
 function peopleCount(){return state.people.filter(p=>p.alive).length;}
 function roleCounts(){const c={};Object.keys(ROLES).forEach(r=>c[r]=0);state.people.forEach(p=>{if(p.alive)c[p.role]=(c[p.role]||0)+1;});return c;}
 function unlockedRoles(){return yd(state.year).unlockRoles;}
-function unlockedBuildings(){return Object.keys(BUILDINGS).filter(b=>BUILDINGS[b].unlock<=state.year&&(!BUILDINGS[b].online||ON.on));}
+function unlockedBuildings(){return Object.keys(BUILDINGS).filter(b=>BUILDINGS[b].unlock<=state.year&&(!BUILDINGS[b].online||ON.on)&&!(b==='bridge'&&ON.on));}
 function plannedShelters(){return state.buildings.filter(b=>b.type==='shelter').length;}
 function readyShelters(){return state.buildings.filter(b=>b.type==='shelter'&&b.progress>=1).length;}
 function plannedShelterCapacity(){return plannedShelters()*8;}
@@ -44250,6 +44261,7 @@ function buildingById(id){return state.buildings.find(b=>b.id===id);}
 /* the river is one channel: where it steps sideways the step is filled in, so every water tile
    shares a side with the next, never only a corner */
 function makeTerrain(){
+  if(GRID.online)return makeTerrainOnce();   /* an online island has no river, so there is no share of it to measure */
   /* usable land, reached from the road without a bridge, is 50 to 66 per cent of the land (Matt, 2026-10-02) */
   for(let k=0;k<60;k++){const t=makeTerrainOnce(),C=GRID.cols,R=GRID.rows,seen=new Set([t.roadRow[0]*C]),q=[[0,t.roadRow[0]]];
     while(q.length){const [x,y]=q.shift();for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,kk=ny*C+nx;if(nx<0||ny<0||nx>=C||ny>=R||seen.has(kk)||t[kk]==='water')continue;seen.add(kk);q.push([nx,ny]);}}
@@ -44261,12 +44273,12 @@ function makeTerrainOnce(){
   const set=(x,y,v)=>{if(x>=0&&y>=0&&x<C&&y<R)t[y*C+x]=v;};
   /* one river; a third of the time it forks below (Matt, 2026-10-02) */
   const river=(x0,lo,hi,widen)=>{let x=x0;for(let y=0;y<R;y++){const nx=y?clamp(x+ri(-1,1),lo,hi):x;for(let k=Math.min(x,nx);k<=Math.max(x,nx);k++)set(k,y,'water');if(Math.random()<widen)set(nx+1,y,'water');x=nx;}};
-  const rx=ri(7,8);river(rx,rx-1,rx+1,.3);
+  if(!GRID.online){const rx=ri(7,8);river(rx,rx-1,rx+1,.3);}
   /* the road: steps only where neither column touches the river, never twice running */
   const wet=x=>{for(let y=0;y<R;y++)if(t[y*C+x]==='water')return true;return false;},rr=[],road=new Set();
-  let r0=ri(4,6);
+  const rm=GRID.online?Math.floor(R/2):5;let r0=ri(rm-1,rm+1);
   for(let x=0;x<C;x++){
-    if(x>0&&!wet(x)&&!wet(x-1)&&!(x>1&&rr[x-1]!==rr[x-2])&&Math.random()<.45)r0=clamp(r0+(Math.random()<.5?-1:1),4,6);
+    if(x>0&&!wet(x)&&!wet(x-1)&&!(x>1&&rr[x-1]!==rr[x-2])&&Math.random()<.45)r0=clamp(r0+(Math.random()<.5?-1:1),rm-1,rm+1);
     rr.push(r0);road.add(r0*C+x);
     if(x>0&&rr[x]!==rr[x-1])road.add(rr[x]*C+(x-1));   /* the corner that joins the two levels */
   }
@@ -44275,7 +44287,7 @@ function makeTerrainOnce(){
      channel to the edge near the top or the bottom, cutting off a corner of the far bank no bigger
      than a third of it. That corner needs a second bridge, across the branch. */
   t.branch=[];
-  if(Math.random()<1/3){
+  if(!GRID.online&&Math.random()<1/3){
     const farN=()=>{let n=0;for(let y=0;y<R;y++)for(let x=0;x<C;x++)if(t[y*C+x]!=='water'&&x>edge(y))n++;return n;};
     const edge=y=>{let m=0;for(let x=0;x<C;x++)if(t[y*C+x]==='water'&&x<11)m=x;return m;};
     const total=farN(),top=Math.random()<.5,saved=t.slice();
@@ -44298,12 +44310,12 @@ function makeTerrainOnce(){
     }
   }
   const free=(gx,gy)=>t[gy*C+gx]==='grass'&&!road.has(gy*C+gx);
-  for(let c=0,n=ri(3,4);c<n;c++){
-    const cx=c===0?ri(11,13):ri(0,6),cy=ri(0,R-1);
+  for(let c=0,n=GRID.online?ri(9,12):ri(3,4);c<n;c++){
+    const cx=GRID.online?ri(0,C-1):(c===0?ri(11,13):ri(0,6)),cy=ri(0,R-1);
     for(let i=0,sz=ri(5,8);i<sz;i++){const gx=clamp(cx+ri(-2,2),0,C-1),gy=clamp(cy+ri(-2,2),0,R-1);if(free(gx,gy))t[gy*C+gx]='tree';}
   }
-  for(let c=0,n=ri(2,3);c<n;c++){
-    const cx=ri(1,12),cy=ri(0,R-1);
+  for(let c=0,n=GRID.online?ri(5,7):ri(2,3);c<n;c++){
+    const cx=GRID.online?ri(1,C-2):ri(1,12),cy=ri(0,R-1);
     for(let i=0,sz=ri(2,4);i<sz;i++){const gx=clamp(cx+ri(-1,1),0,C-1),gy=clamp(cy+ri(-1,1),0,R-1);if(free(gx,gy))t[gy*C+gx]='rock';}
   }
   return t;
@@ -44515,7 +44527,7 @@ function resetGame(){
      outside: without them nobody had a bed until month 3 and even a sound plan lost a third of the
      village (measured 2026-10-01). */
   let made=0;
-  for(const gy of [4,6,3,7])for(let gx=1;gx<9&&made<2;gx++)if(tileFree(gx,gy)&&tileFree(gx+1,gy)){state.buildings.push({id:state.nextId++,type:'shelter',gx,gy,progress:1,start:true});made++;gx++;}
+  for(const gy of (GRID.online?[-1,1,-2,2,-3,3,-4,4,-5,5].map(d=>Math.floor(GRID.rows/2)+d):[4,6,3,7]))for(let gx=1;gx<(GRID.online?13:9)&&made<2;gx++)if(tileFree(gx,gy)&&tileFree(gx+1,gy)){state.buildings.push({id:state.nextId++,type:'shelter',gx,gy,progress:1,start:true});made++;gx++;}
   mapChanged();
   state.baselineStats=collectBaselineStats();
   addLog('Twenty settlers arrive at the river flat with two shelters, beds for 16. The leader opens the first ledger.');
@@ -48123,7 +48135,7 @@ document.addEventListener('click',e=>{
   e.preventDefault();e.stopPropagation();askLeave(a.href);
 },true);
 window.addEventListener('beforeunload',e=>{if(leaving||!midGame())return;e.preventDefault();e.returnValue='';});
-const beginGame=(short,endless)=>{if(typeof onSetNewIn==='function')onSetNewIn(false);ON.on=false;ON.started=false;MP.on=false;state.short=short;state.endless=!!endless;el('mpSetup').classList.add('hide');el('splash').classList.add('hide');resetGame();recStart();let done=false;try{done=localStorage.getItem(TUT_KEY)==='1';}catch(e){}if(!done)tutStart(0);};
+const beginGame=(short,endless)=>{if(typeof onSetNewIn==='function')onSetNewIn(false);if(GRID.online)onSetGrid(false);ON.on=false;ON.started=false;MP.on=false;state.short=short;state.endless=!!endless;el('mpSetup').classList.add('hide');el('splash').classList.add('hide');resetGame();recStart();let done=false;try{done=localStorage.getItem(TUT_KEY)==='1';}catch(e){}if(!done)tutStart(0);};
 el('startShortBtn').addEventListener('click',()=>beginGame(true));
 el('startBtn').addEventListener('click',()=>beginGame(false));
 el('startEndlessBtn').addEventListener('click',()=>beginGame(false,true));
@@ -48498,6 +48510,7 @@ function makeProblems(year){
     .map(({p})=>({kind:'problem',skill:'Settlement problem',title:p.title,q:`<b>${p.title}.</b> ${p.text} What will you do?`,options:p.options,correct:false,attempts:0,auto:true,choice:null}));
 }
 function setNoQ(on){
+  if(on&&!NOQ&&ON.on&&ON.started&&typeof onCaught==='function')onCaught();   /* online, the Watcher sees you switch the questions off */
   NOQ=!!on;try{localStorage.setItem('sl-noq',NOQ?'1':'0');}catch(e){}
   if(state.phase==='ledger'){state.survey=null;state.quiz=makeLedger(state.year);state.quizPos=0;renderAll();setTab();}
   setMsg(NOQ?'Maths questions are off. Solve problems in the village instead.':'Maths questions are back on.');
@@ -48534,7 +48547,7 @@ function mpLoad(i){
   mapChanged();syncWalkers();renderAll();setTab();scheduleCanvasResize();
 }
 function mpStart(names,mode){
-  MP.on=true;MP.names=names.slice();MP.mode=mode;
+  if(GRID.online)onSetGrid(false);MP.on=true;MP.names=names.slice();MP.mode=mode;
   state.short=mode==='3';state.endless=mode==='E';
   ['splash','finalOverlay','mpBoard','mpPass','stopBox'].forEach(id=>el(id).classList.add('hide'));
   resetGame();
@@ -48653,8 +48666,8 @@ function onArmy() {
   let att = 0, def = 0, land = 0, sea = 0, eat = 0;
   ON_UNITS.forEach(u => { const c = A[u.k] || 0; if (u.grp === 'sea') sea += c; else land += c; eat += c * u.eat; att += c * u.atk; def += c * u.def; });
   const sol = roleCounts().soldier || 0;
-  att = (att + sol) * (1 + 0.15 * Math.min(3, cnt('forge')));
-  def = def + sol * 1.1 + cnt('palisade') * 1.5 + Math.min(8, cnt('stonewall')) * 4 + cnt('watchtower') * 3 + Math.min(3, cnt('fortress')) * 10;
+  att = (att + sol) * (1 + 0.15 * Math.min(3, cnt('forge'))) + (state.boostAtk || 0);
+  def = def + sol * 1.1 + cnt('palisade') * 1.5 + Math.min(8, cnt('stonewall')) * 4 + cnt('watchtower') * 3 + Math.min(3, cnt('fortress')) * 10 + (state.ward || 0);
   return { att: Math.round(att * 10) / 10, def: Math.round(def * 10) / 10, units: land + sea, land, sea, eat, landCap: cnt('barracks') * 6, seaCap: cnt('shipyard') * 4, cap: cnt('barracks') * 6 + cnt('shipyard') * 4,
     boats: cnt('harbour') + (A.warship > 0 ? 1 : 0), ships: A.warship || 0, tanks: A.tank || 0, cannons: A.cannon || 0, wonder: cnt('monument'), cnt };
 }
@@ -48663,7 +48676,9 @@ function onStats() {
   return { pop: peopleCount(), soldiers: roleCounts().soldier || 0, towers: completed('watchtower'), knowledge: Math.floor(state.resources.knowledge || 0),
     food: Math.floor(state.resources.food), materials: Math.floor(state.resources.materials), built: state.buildings.filter(b => b.progress >= 1 && !b.start).length,
     att: a.att, def: a.def, units: a.units, boats: a.boats, wonder: a.wonder, ships: a.ships, tanks: a.tanks, cannons: a.cannons,
-    map: state.buildings.filter(b => b.progress >= 1 && b.type !== 'bridge').slice(0, 90).map(b => [b.type, b.gx, b.gy]) };
+    bl: state.buildings.filter(b => b.type !== 'bridge').slice(0, 170).map(b => [b.type, b.gx, b.gy, Math.round(b.progress * 100) / 100]),
+    wk: state.walkers.slice(0, 90).map(w => [Math.round(w.x), Math.round(w.y), Object.keys(ROLES).indexOf(w.role), w.lead ? 1 : 0]),
+    ter: Array.from(state.terrain, v => ({ grass: 'g', tree: 't', rock: 'r', water: 'w' })[v] || 'g').join(''), rr: Array.from(state.terrain.roadRow || []) };
 }
 function onlineStats() { if (ON.on && ON.started && !ON.finished) { onSend({ t: 'stats', stats: onStats() }); if (ON_UNLOCKS[state.year] && ON.noted !== state.year) { ON.noted = state.year; addLog(ON_UNLOCKS[state.year], 'good'); setMsg(ON_UNLOCKS[state.year]); } } }
 const onKey = (a, b) => (a < b ? a + '-' + b : b + '-' + a);
@@ -48720,6 +48735,18 @@ function onMsg(m) {
     const txt = `You dug up ${m.text.toLowerCase()}: ${Object.keys(m.reward).map(k => m.reward[k] + ' ' + (k === 'sat' ? 'satisfaction' : k)).join(', ')}.`;
     addLog(txt, 'good'); setMsg(txt); ON.eggs.push({ k: 'party', t0: performance.now() }); renderAll(); return;
   }
+  if (m.t === 'bought') {
+    const q = (ON.buying || []).findIndex(b => b.id === m.m && b.i === m.i); if (q >= 0) ON.buying.splice(q, 1);
+    const it = MERCH[m.name] && MERCH[m.name].items[m.i]; if (!it) return;
+    const txt = `You bought ${it.n.toLowerCase()} from ${m.name}: ${onItemApply(it.fx)}.`;
+    addLog(txt, 'good'); setMsg(txt); renderAll(); onShopDraw(); return;
+  }
+  if (m.t === 'soldout') {
+    const q = (ON.buying || []).findIndex(b => b.id === m.m && b.i === m.i);
+    if (q >= 0) { const b = ON.buying.splice(q, 1)[0]; Object.keys(b.c).forEach(k => { state.resources[k] += b.c[k]; }); setMsg('Sold out! You were a moment too late, and you have your money back.'); renderAll(); onShopDraw(); }
+    return;
+  }
+  if (m.t === 'caught') { onWatcherCatch(m.slot, m.name); return; }
   if (m.t === 'egg') { ON.eggs.push({ k: m.k, t0: performance.now(), name: m.name }); ON.feed.push(`${m.name} summoned ${({ dragon: 'a dragon', ducks: 'the ducks', party: 'a party', nessie: 'Nessie', tank: 'a tank parade', armada: 'an armada' })[m.k]}!`); ON.unseen++; onHudDraw(); onWorldDraw(); return; }
   if (m.t === 'board') { ON.room = m.room; onBoard(); return; }
 }
@@ -48733,8 +48760,12 @@ function onNewWars(had) {
 }
 
 /* ---------- starting the game ---------- */
+function onSetGrid(online) {   /* online islands are a finer grid, so more fits; solo is the usual 15 by 11 with its river */
+  GRID.online = !!online; GRID.cols = online ? ON_COLS : 15; GRID.rows = online ? ON_ROWS : 11;
+  cv.width = GRID.cols * GRID.tile; cv.height = GRID.oy + GRID.rows * GRID.depth; scheduleCanvasResize();
+}
 function onLoadBase(sn) {
-  clearTimeout(simTimer); simTimer = null;
+  clearTimeout(simTimer); simTimer = null; onSetGrid(true);
   const c = JSON.parse(JSON.stringify(sn)), tt = c.__terrain; delete c.__terrain;
   const t = tt.tiles.slice(); if (tt.roadRow) t.roadRow = tt.roadRow; if (tt.road) t.road = new Set(tt.road); t.branch = tt.branch || [];
   c.terrain = t;
@@ -48745,20 +48776,19 @@ function onLoadBase(sn) {
 function onBegin(base) {
   ['splash', 'finalOverlay', 'mpBoard', 'mpPass', 'stopBox'].forEach(id => el(id).classList.add('hide'));
   MP.on = false; ON.started = true; ON.finished = false; ON.wait = false; ON.attack = null; ON.feed = []; ON.unseen = 0;
-  onLoadBase(base);
+  onSetGrid(true); state.short = ON.mode === '3'; state.endless = ON.mode === 'E'; resetGame();   /* each player gets their own island, made fresh the way the game always does it */
   el('onSetup').classList.add('hide');
   let done = false; try { done = localStorage.getItem(TUT_KEY) === '1'; } catch (e) {}
   if (!done) tutStart(0);
-  onSetNewIn(true); state.army = state.army || {}; ON.cam = null; ON.focus = null;
+  onSetNewIn(true); state.army = state.army || {}; ON.cam = null; ON.focus = null; NOQ = false;   /* nobody starts an online game with the questions already off */
+  ON.bd = {}; onGeom.c = null;
+  clearInterval(ON.live); ON.live = setInterval(() => { if (ON.on && ON.started && !ON.finished) onSend({ t: 'stats', stats: onStats() }); }, 1300);   /* the picture of your island, kept live for everyone */
   onHudDraw(); onlineStats();
   setMsg(`You are ${ON.room.players[ON.slot].name}, on the ${['red', 'blue', 'green', 'gold'][ON.slot]} island.`);
   setTimeout(() => onWorld(), 400);
 }
 function onHostStart() {
-  const mode = ON.mode;
-  state.short = mode === '3'; state.endless = mode === 'E';
-  resetGame();
-  onSend({ t: 'start', base: mpSnap() });
+  onSend({ t: 'start' });
 }
 
 /* ---------- lobby (inside the start screen) ---------- */
@@ -48824,7 +48854,7 @@ function onlineReady() {
     if (!onAtWar(attack) || !canAfford(ON_RAID)) { attack = null; ON.attack = null; setMsg('The raid was cancelled: no war, or not enough food for supplies.'); }
     else { pay(ON_RAID); addLog(`Raiders set out against ${onName(attack)}.`, 'warn'); }
   }
-  ON.wait = true;
+  ON.wait = true; ON.spent = { ward: state.ward || 0, atk: state.boostAtk || 0 };
   onSend({ t: 'ready', season: state.year, stats: onStats(), attack });
   renderAll(); onWaitDraw();
 }
@@ -48864,7 +48894,13 @@ function onGo(m) {
   if (state.phase !== 'plan') return;
   const r = m.results && m.results[ON.slot];
   let lines = [];
+  if (r && r.conqueredBy != null) {   /* this island has been taken */
+    ON.finished = true; ON.wait = false; clearInterval(ON.live); onWaitDraw('Your island was taken. You are out of the game.');
+    onReport('Your island has fallen', r.lines || ['Another player took your island.'], null); return;
+  }
   if (r) { onApply(r); lines = (r.lines || []).slice(); lines.forEach(l => addLog(l, /lost|raided|failed|Plague|Dry|pirates|Pirates/.test(l) ? 'bad' : 'good')); }
+  if (ON.spent) { state.ward = Math.max(0, (state.ward || 0) - ON.spent.ward); state.boostAtk = Math.max(0, (state.boostAtk || 0) - ON.spent.atk); ON.spent = null; }   /* bought boosts last for one raid */
+  if (m.merchants) { ON.room.merchants = m.merchants; const mm = m.merchants; if (mm.length) lines.push(mm.length > 1 ? `Two traders sail in together: ${mm[0].name} the ${MERCH[mm[0].name].job} and ${mm[1].name} the ${MERCH[mm[1].name].job}. They carry rare goods! Find them on the world map.` : `${mm[0].name} the ${MERCH[mm[0].name].job} has docked. Find the boat on the world map.`); }
   if (m.event && !lines.some(l => l.indexOf(m.event.title) === 0)) lines.push(`${m.event.title}: ${m.event.text}`);
   if (!m.late) lines.push(...onPassive());
   ON.go = true; try { startYear(); } finally { ON.go = false; }
@@ -48901,40 +48937,171 @@ function onWaitDraw(text) {
 el('onWait').addEventListener('click', (e) => { const a = e.target.dataset.act; if (a === 'skip') onSend({ t: 'skip' }); if (a === 'world') onWorld(); });
 
 /* ---------- the shared map: one world, an island each, the river between ---------- */
-const OWW = 1440, OWH = 880;   /* the world is bigger than the islands on it, so there is sea to cross and room to zoom */
-function onIslands(n) {
-  if (n === 2) return [[230, 270, 300, 340], [910, 270, 300, 340]];
-  if (n === 3) return [[230, 120, 300, 195], [910, 120, 300, 195], [570, 520, 300, 195]];
-  return [[230, 120, 300, 195], [910, 120, 300, 195], [230, 560, 300, 195], [910, 560, 300, 195]];
+/* ---------- traders: one docks each season, and what is on the cart depends on who it is ----------
+   Four goods each, and two rare ones that only come when two traders arrive together (about 1.5% of seasons).
+   Costs are paid when you buy; stock is limited and the server hands it out first come, first served. */
+const MERCH = {
+  Alex: { job: 'Armourer', items: [
+    { n: 'Iron shield', c: { materials: 22 }, fx: { ward: 12 } }, { n: 'Spear bundle', c: { materials: 30, food: 12 }, fx: { army: { spear: 3 } } },
+    { n: 'Whetstone', c: { materials: 18 }, fx: { atk: 8 } }, { n: 'Chainmail', c: { materials: 40 }, fx: { ward: 22 } },
+    { n: 'Dragonscale plate', c: { materials: 70 }, fx: { ward: 50 } }, { n: 'Master-forged blade', c: { materials: 65 }, fx: { atk: 40 } }] },
+  Joe: { job: 'Grocer', items: [
+    { n: 'Sack of grain', c: { materials: 18 }, fx: { food: 40 } }, { n: 'Smoked fish', c: { materials: 10 }, fx: { food: 22 } },
+    { n: 'Honey cake', c: { materials: 12 }, fx: { sat: 6 } }, { n: 'Seed corn', c: { materials: 40 }, fx: { food: 100 } },
+    { n: 'Golden harvest basket', c: { materials: 55 }, fx: { food: 260 } }, { n: 'Royal feast kit', c: { materials: 50 }, fx: { sat: 14, health: 6 } }] },
+  Noah: { job: 'Shipwright', items: [
+    { n: 'Spare sail', c: { materials: 20 }, fx: { atk: 6 } }, { n: 'Salted cod', c: { materials: 14 }, fx: { food: 30 } },
+    { n: 'Ship’s bell', c: { materials: 10 }, fx: { sat: 4 } }, { n: 'Warship hull', c: { materials: 75, food: 15 }, fx: { army: { warship: 1 } } },
+    { n: 'Twin warships', c: { materials: 130, food: 25 }, fx: { army: { warship: 2 } } }, { n: 'Navigator’s chart', c: { materials: 30 }, fx: { atk: 22, ward: 22 } }] },
+  Abdullah: { job: 'Spice and medicine trader', items: [
+    { n: 'Medicine chest', c: { materials: 24 }, fx: { medicine: 6 } }, { n: 'Spice jar', c: { materials: 16 }, fx: { sat: 8 } },
+    { n: 'Healing salve', c: { materials: 20 }, fx: { health: 8 } }, { n: 'Dried dates', c: { materials: 12 }, fx: { food: 28 } },
+    { n: 'Elixir of life', c: { materials: 55 }, fx: { health: 18, medicine: 8 } }, { n: 'Saffron fortune', c: { materials: 45 }, fx: { sat: 16, boost: 2 } }] },
+  Karas: { job: 'Scholar', items: [
+    { n: 'Scroll of figures', c: { materials: 30 }, fx: { knowledge: 20 } }, { n: 'Quill set', c: { materials: 12 }, fx: { knowledge: 8 } },
+    { n: 'Star chart', c: { materials: 22 }, fx: { knowledge: 12, sat: 2 } }, { n: 'Almanac', c: { materials: 26 }, fx: { boost: 2 } },
+    { n: 'Library crate', c: { materials: 70 }, fx: { knowledge: 55 } }, { n: 'Sage’s blessing', c: { materials: 50 }, fx: { knowledge: 30, boost: 3 } }] },
+  Oscar: { job: 'Gambler', items: [
+    { n: 'Mystery crate', c: { materials: 20 }, fx: { rand: [{ materials: 60 }, { food: 60 }, { knowledge: 25 }, { army: { spear: 4 } }, { sat: 10 }, { materials: 5 }] } },
+    { n: 'Lucky coin', c: { food: 6 }, fx: { sat: 5 } }, { n: 'Loaded dice', c: { materials: 15 }, fx: { atk: 6 } }, { n: 'Card sharp’s tip', c: { materials: 18 }, fx: { knowledge: 9 } },
+    { n: 'Golden crate', c: { materials: 45 }, fx: { rand: [{ materials: 150 }, { food: 150 }, { knowledge: 60 }, { army: { horse: 3 } }, { sat: 20 }, { boost: 5 }] } },
+    { n: 'Jackpot ticket', c: { food: 25 }, fx: { rand: [{ materials: 250 }, { food: 6 }, { food: 6 }, { sat: 2 }] } }] },
+  Cooper: { job: 'Timber merchant', items: [
+    { n: 'Timber bundle', c: { food: 20 }, fx: { materials: 45 } }, { n: 'Fine tools', c: { food: 12 }, fx: { materials: 24 } },
+    { n: 'Barrel of ale', c: { materials: 12 }, fx: { sat: 6 } }, { n: 'Fence posts', c: { materials: 10 }, fx: { ward: 6 } },
+    { n: 'Great beam stack', c: { food: 45 }, fx: { materials: 130 } }, { n: 'Master toolbox', c: { food: 30 }, fx: { materials: 70, ward: 15 } }] },
+  Jonah: { job: 'Fisherman', items: [
+    { n: 'Fresh fish', c: { materials: 10 }, fx: { food: 35 } }, { n: 'Big net', c: { materials: 22 }, fx: { food: 70 } },
+    { n: 'Whale oil', c: { materials: 14 }, fx: { sat: 5 } }, { n: 'Sea charm', c: { materials: 16 }, fx: { ward: 9 } },
+    { n: 'Silver catch', c: { materials: 40 }, fx: { food: 170 } }, { n: 'Leviathan tooth', c: { materials: 60 }, fx: { atk: 30 } }] },
+  Moses: { job: 'Wandering elder', items: [
+    { n: 'Blessing', c: { food: 16 }, fx: { sat: 10, health: 3 } }, { n: 'Walking staff', c: { materials: 14 }, fx: { ward: 10 } },
+    { n: 'Tablets of stone', c: { materials: 26 }, fx: { knowledge: 15 } }, { n: 'Water of the river', c: { materials: 12 }, fx: { health: 6 } },
+    { n: 'Parting of the waters', c: { food: 35 }, fx: { ward: 40, sat: 8 } }, { n: 'Miracle of manna', c: { materials: 40 }, fx: { food: 150, sat: 10 } }] },
+  Harry: { job: 'Wizard', items: [
+    { n: 'Healing potion', c: { materials: 22 }, fx: { health: 10 } }, { n: 'Wand of sparks', c: { materials: 38 }, fx: { atk: 14 } },
+    { n: 'Owl post', c: { materials: 20 }, fx: { boost: 3 } }, { n: 'Ward charm', c: { materials: 30 }, fx: { ward: 16 } },
+    { n: 'Invisibility cloak', c: { materials: 75 }, fx: { ward: 48 } }, { n: 'Fireball scroll', c: { materials: 70 }, fx: { atk: 42 } }] },
+  Kiro: { job: 'Shadow broker', items: [
+    { n: 'Smoke bombs', c: { materials: 28 }, fx: { ward: 15 } }, { n: 'Throwing stars', c: { materials: 26 }, fx: { atk: 12 } },
+    { n: 'Poison darts', c: { materials: 35 }, fx: { atk: 18 } }, { n: 'Stolen goods', c: { food: 10 }, fx: { materials: 32, sat: -3 } },
+    { n: 'Shadow blade', c: { materials: 60 }, fx: { atk: 36 } }, { n: 'Night raiders', c: { materials: 80, food: 20 }, fx: { army: { horse: 3 } } }] },
+  Patty: { job: 'Baker', items: [
+    { n: 'Warm bread', c: { materials: 8 }, fx: { food: 24 } }, { n: 'Meat pie', c: { materials: 12 }, fx: { food: 16, sat: 3 } },
+    { n: 'Honey pastries', c: { materials: 14 }, fx: { sat: 8 } }, { n: 'Picnic basket', c: { materials: 18 }, fx: { food: 30, sat: 3 } },
+    { n: 'Grand banquet', c: { materials: 50 }, fx: { food: 80, sat: 18, health: 5 } }, { n: 'Pie of legends', c: { materials: 35 }, fx: { sat: 20, health: 8 } }] },
+  Lucas: { job: 'Engineer', items: [
+    { n: 'Gear set', c: { food: 14 }, fx: { materials: 30 } }, { n: 'Gadget', c: { materials: 34 }, fx: { atk: 12 } },
+    { n: 'Ballista bolts', c: { materials: 26 }, fx: { ward: 12 } }, { n: 'Cannon', c: { materials: 66, food: 10 }, fx: { army: { cannon: 1 } } },
+    { n: 'Tank', c: { materials: 120, food: 25 }, fx: { army: { tank: 1 } } }, { n: 'Blueprint folio', c: { materials: 60 }, fx: { atk: 20, ward: 20, knowledge: 15 } }] },
+};
+function onItemText(fx) {
+  if (fx.rand) return 'A surprise: it could be treasure or it could be junk';
+  const p = fxParts(Object.fromEntries(Object.entries(fx).filter(([k]) => ['ward', 'atk', 'army'].indexOf(k) < 0)));
+  if (fx.ward) p.push(`${fx.ward} more defence for the next raid`);
+  if (fx.atk) p.push(`${fx.atk} more attack for the next raid`);
+  if (fx.army) Object.keys(fx.army).forEach(k => { const u = ON_UNITS.find(x => x.k === k); p.push(`${fx.army[k]} ${u ? u.name.toLowerCase() : k} join you`); });
+  return p.join(', ');
 }
-function onSpots(n) {   /* places in the sea where something can turn up */
-  if (n === 2) return [[720, 300], [720, 440], [720, 580], [720, 170], [720, 710]];
-  if (n === 3) return [[720, 215], [350, 430], [1090, 430], [720, 440], [720, 790]];
-  return [[720, 215], [720, 655], [380, 437], [1060, 437], [720, 437]];
+function onItemApply(fx) {
+  if (fx.rand) return 'It held: ' + onItemApply(fx.rand[Math.floor(Math.random() * fx.rand.length)]);
+  const parts = [], base = {};
+  Object.keys(fx).forEach(k => { if (['ward', 'atk', 'army'].indexOf(k) < 0) base[k] = fx[k]; });
+  if (Object.keys(base).length) { applyFx(base); parts.push(...fxParts(base)); }
+  if (fx.ward) { state.ward = (state.ward || 0) + fx.ward; parts.push(`${fx.ward} more defence for the next raid`); }
+  if (fx.atk) { state.boostAtk = (state.boostAtk || 0) + fx.atk; parts.push(`${fx.atk} more attack for the next raid`); }
+  if (fx.army) { state.army = state.army || {}; Object.keys(fx.army).forEach(k => { state.army[k] = (state.army[k] || 0) + fx.army[k]; const u = ON_UNITS.find(x => x.k === k); parts.push(`${fx.army[k]} ${u ? u.name.toLowerCase() : k} join you`); }); }
+  return parts.join(', ') || 'nothing much';
 }
-const ON_ISLETS = [[70, 90, 38], [1370, 110, 30], [90, 800, 34], [1350, 790, 42], [720, 45, 24], [40, 450, 22], [1405, 450, 26], [700, 850, 20]];
+function onShopOpen() { onShopDraw(); el('merchantModal').classList.remove('hide'); }
+function onShopDraw() {
+  const ms = (ON.room && ON.room.merchants) || [];
+  el('merchantBody').innerHTML = ms.length ? ms.map(m => {
+    const cat = MERCH[m.name], n = m.premium ? 6 : 4;
+    const rows = cat.items.slice(0, n).map((it, i) => {
+      const left = m.stock[i], afford = canAfford(it.c), rare = i >= 4;
+      return `<div class="note" style="margin:0;${rare ? 'border-left:4px solid #E0A33E;' : ''}"><b>${it.n}</b>${rare ? ' <span style="color:#B07A12;font-weight:700">RARE</span>' : ''} <span style="opacity:.8">(${left} left)</span><br><span style="font-size:.88rem">${onItemText(it.fx)}</span>
+        <div class="mp-row" style="margin-top:6px"><button class="btn small" data-buy="${m.id}|${i}" type="button" ${left <= 0 || !afford ? 'disabled' : ''}>Buy for ${costText(it.c)}</button><span style="font-size:.82rem">${left <= 0 ? 'Sold out' : afford ? '' : 'Not enough'}</span></div></div>`;
+    }).join('');
+    return `<h3 style="margin:8px 0 4px;font-size:1.05rem">${m.name} the ${cat.job}${m.premium ? ' <span style="color:#B07A12">with rare goods</span>' : ''}</h3><div style="display:flex;flex-direction:column;gap:8px">${rows}</div>`;
+  }).join('') : '<p class="note">No trader is in port right now.</p>';
+}
+el('merchantBody').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-buy]'); if (!b || b.disabled) return;
+  const [id, i] = b.dataset.buy.split('|').map(Number), m = ((ON.room && ON.room.merchants) || []).find(x => x.id === id); if (!m) return;
+  const it = MERCH[m.name].items[i]; if (!it || !canAfford(it.c)) return;
+  pay(it.c); (ON.buying = ON.buying || []).push({ id, i, c: it.c }); onSend({ t: 'buy', m: id, i }); renderAll();
+});
+el('merchantClose').addEventListener('click', () => el('merchantModal').classList.add('hide'));
+
+/* ---------- the shared world: everyone's real island, side by side, with the river between ---------- */
+const ON_COLS = 20, ON_ROWS = 14;   /* an online island: more, smaller blocks than the solo map, and no river through it */
 const onRng = (seed) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+function onGeom(n) {
+  const ow = GRID.cols * GRID.tile, oh = GRID.rows * GRID.depth;
+  if (onGeom.c && onGeom.c.n === n && onGeom.c.ow === ow) return onGeom.c;
+  const bw = 560, bh = Math.round(bw * oh / ow), fw = 34, rv = 110, rh = 58, top = 134, WW = fw * 2 + bw * 2 + rv, cx = fw + bw + rv / 2;
+  const xA = fw, xB = fw + bw + rv, yA = top, yC = top + bh + rh, rowY = top + bh + rh / 2;
+  let rects, WH;
+  if (n === 2) { rects = [[xA, yA, bw, bh], [xB, yA, bw, bh]]; WH = top + bh + fw; }
+  else if (n === 3) { rects = [[xA, yA, bw, bh], [xB, yA, bw, bh], [(WW - bw) / 2, yC, bw, bh]]; WH = yC + bh + fw; }
+  else { rects = [[xA, yA, bw, bh], [xB, yA, bw, bh], [xA, yC, bw, bh], [xB, yC, bw, bh]]; WH = yC + bh + fw; }
+  const docks = n === 2 ? [[cx, top + bh * .3], [cx, top + bh * .7]] : [[cx, rowY], [cx, top + bh * .45]];
+  const spots = n === 2 ? [[cx, top + bh * .15], [cx, top + bh * .5], [cx, top + bh * .85]]
+    : n === 3 ? [[cx, top + bh * .25], [cx, top + bh * .7], [xA + bw / 2, rowY], [xB + bw / 2, rowY]]
+    : [[cx, top + bh * .25], [cx, top + bh * .72], [cx, yC + bh * .3], [cx, yC + bh * .75], [xA + bw / 2, rowY], [xB + bw / 2, rowY]];
+  return (onGeom.c = { n, ow, oh, bw, bh, fw, rv, rh, top, WW, WH, cx, rowY, rects, docks, spots, yC });
+}
 function onHudDraw() {
   const wb = el('worldBtn'), ab = el('armyBtn'); if (!wb) return;
   const live = ON.on && ON.started;
   wb.classList.toggle('hide', !live); ab.classList.toggle('hide', !live);
   wb.textContent = ON.unseen ? `World (${Math.min(ON.unseen, 9)}${ON.unseen > 9 ? '+' : ''})` : 'World';
 }
+function onFitCanvas(n) {
+  const g = onGeom(n), cv2 = el('worldCanvas'), w = 1100, h = Math.round(w * g.WH / g.WW);
+  if (cv2.width !== w || cv2.height !== h) { cv2.width = w; cv2.height = h; ON.cam = null; }
+  cv2.style.width = '100%'; cv2.style.maxWidth = '100%'; cv2.style.maxHeight = ''; cv2.style.margin = '0'; cv2.style.display = 'block';
+}
 function onWorld(auto) {
   if (!auto) { ON.unseen = 0; onHudDraw(); }
-  el('worldMap').classList.remove('hide'); onWorldDraw();
+  el('worldMap').classList.remove('hide');
+  if (ON.room) onFitCanvas(ON.room.players.length);
+  onWorldDraw(); onZoomUI();
   if (!ON.raf) ON.raf = requestAnimationFrame(onWorldFrame);
 }
 /* where the camera should be: the whole world, or one island filling the picture */
-function onCamFor(cv, n, focus) {
-  const cw = cv.width, ch = cv.height, isl = onIslands(n);
-  if (focus == null || !isl[focus]) { const s = Math.min(cw / OWW, ch / OWH); return { s, x: (cw - OWW * s) / 2, y: (ch - OWH * s) / 2 }; }
-  const r = isl[focus], s = Math.min(cw / (r[2] + 150), ch / (r[3] + 175));
-  return { s, x: cw / 2 - (r[0] + r[2] / 2) * s, y: ch / 2 - (r[1] + r[3] / 2) * s + 12 };
+function onCamFor(cv2, G, focus) {
+  const cw = cv2.width, ch = cv2.height;
+  if (focus == null || !G.rects[focus]) { const s = Math.min(cw / G.WW, ch / G.WH); return { s, x: (cw - G.WW * s) / 2, y: (ch - G.WH * s) / 2 }; }
+  const r = G.rects[focus], s = Math.min(cw / (r[2] + 36), ch / (r[3] + 96));
+  return { s, x: cw / 2 - (r[0] + r[2] / 2) * s, y: ch / 2 - (r[1] + r[3] / 2) * s + 22 };
 }
-function onZoomTo(slot) {
-  ON.focus = slot == null ? null : slot;
-  const h = el('worldHint'); if (h) h.textContent = ON.focus == null ? 'Click an island to zoom in on it.' : `Zoomed in on ${onName(ON.focus)}. Click the sea to zoom back out.`;
+function onOwned() {   /* the islands you hold: yours, and any you have taken from someone else */
+  const R = ON.room, mine = [ON.slot]; if (R && R.owners) Object.keys(R.owners).forEach(k => { if (R.owners[k] === ON.slot && Number(k) !== ON.slot) mine.push(Number(k)); });
+  return mine;
+}
+function onZoomUI() {
+  const b = el('worldZoomBtn'), box = el('islandBtns'), h = el('worldHint'); if (!b) return;
+  const mine = onOwned();
+  b.textContent = ON.focus == null ? (mine.length > 1 ? 'Zoom in to view your islands' : 'Zoom in to view your island') : 'Zoom out to view whole map';
+  box.innerHTML = mine.length > 1 ? mine.map((s, i) => `<button class="btn small ${ON.focus === s ? 'btn-primary' : ''}" data-island="${s}" type="button">View island ${i + 1}</button>`).join('') : '';
+  h.textContent = ON.focus == null ? 'Or click any island to look at it.' : (ON.focus === ON.slot ? 'Your island.' : `Looking at ${onName(ON.focus)}'s island. Click the water to zoom out.`);
+  onBarDraw();
+}
+function onZoomTo(slot) { ON.focus = slot == null ? null : slot; onZoomUI(); }
+/* the war controls, at the top, for whichever island you are looking at */
+function onBarDraw() {
+  const bar = el('worldBar'); if (!bar) return;
+  const R = ON.room, f = ON.focus;
+  if (!R || f == null || f === ON.slot || onOwned().indexOf(f) >= 0) { bar.innerHTML = ''; return; }
+  const p = R.players.find(x => x.slot === f); if (!p) { bar.innerHTML = ''; return; }
+  const war = onAtWar(f), offered = R.offers.some(o => o.from === f && o.to === ON.slot), sent = R.offers.some(o => o.from === ON.slot && o.to === f), gone = p.done || (R.owners && R.owners[f] != null);
+  const can = canAfford(ON_DECLARE) && state.year >= 2 && !gone && !ON.finished;
+  const btn = (act, label, dis, extra) => `<button class="btn small ${extra || ''}" data-act="${act}" data-s="${f}" type="button" ${dis ? 'disabled' : ''}>${label}</button>`;
+  bar.innerHTML = gone ? `<span class="note" style="margin:0">${esc(p.name)}'s island has fallen.</span>`
+    : war ? `<b style="color:#b3261e">AT WAR with ${esc(p.name)}</b>${btn('raid', ON.attack === f ? 'Army will attack this season (cancel)' : 'Send the army this season', ON.wait, ON.attack === f ? 'btn-primary' : '')}${btn('peace', offered ? 'Accept peace' : sent ? 'Peace offered' : 'Offer peace', sent && !offered)}`
+    : `${btn('war', `Declare war on ${esc(p.name)} (${costText(ON_DECLARE)})`, !can, 'btn-primary')}${state.year < 2 ? '<span class="note" style="margin:0">War opens in Season 2.</span>' : ''}`;
 }
 function onShip(g, x, y, col, dir) {   /* a little warship */
   g.save(); g.translate(x, y); g.scale(dir, 1);
@@ -48948,54 +49115,166 @@ function onTank(g, x, y, col, dir) {   /* a little tank */
   g.fillStyle = col; g.beginPath(); g.roundRect(-9, -7, 18, 8, 3); g.fill();
   g.fillStyle = '#2b2b30'; g.fillRect(8, -5, 12, 3); g.restore();
 }
+/* ---------- Mr Lovegrove, the Watcher ---------- */
+const ON_CHEAT_COST = { materials: 10, food: 5 };
+function onCaught() {   /* called when someone in an online game uses ans123 to switch the questions off */
+  const R = state.resources; R.materials = Math.max(0, R.materials - ON_CHEAT_COST.materials); R.food = Math.max(0, R.food - ON_CHEAT_COST.food);
+  addLog('The Watcher saw you. You lose 10 materials and 5 food.', 'bad'); onSend({ t: 'caught' }); renderAll();
+}
+function onWatcherCatch(slot, name) {
+  (ON.lasers = ON.lasers || []).push({ slot, t0: performance.now(), name });
+  ON.unseen++; onHudDraw(); onWorldDraw();   /* the server's news line already says it */
+  const b = el('watcherBanner'); el('watcherSub').textContent = name; b.classList.remove('hide'); clearTimeout(ON.bannerT); ON.bannerT = setTimeout(() => b.classList.add('hide'), 4600);
+  if (!el('worldMap').classList.contains('hide')) onZoomTo(null);
+}
+const ON_WATCHER_Y = 10;
+function onWatcher(g, t, rage, x) {   /* a blocky man on a rock at the top of the world, with glowing white eyes */
+  const o = ON_WATCHER_Y, glow = rage ? 1.7 : 1 + Math.sin(t * 2.2) * .25;
+  g.fillStyle = '#5d5d66'; g.beginPath(); g.ellipse(x, o + 92, 52, 15, 0, 0, 7); g.fill();
+  g.fillStyle = '#74747e'; g.fillRect(x - 17, o + 66, 34, 26); g.strokeStyle = '#2b2b30'; g.lineWidth = 1.5; g.strokeRect(x - 17, o + 66, 34, 26);
+  g.fillStyle = '#3b3b8f'; g.fillRect(x - 7, o + 52, 7, 14); g.fillRect(x, o + 52, 7, 14);
+  g.fillStyle = '#1aa6a6'; g.fillRect(x - 7, o + 36, 14, 17);
+  g.fillStyle = '#c8956d'; g.fillRect(x - 13, o + 36, 6, 16); g.fillRect(x + 7, o + 36, 6, 16);
+  g.fillStyle = '#c8956d'; g.fillRect(x - 8, o + 20, 16, 16); g.fillStyle = '#4a2f1b'; g.fillRect(x - 8, o + 20, 16, 5);
+  [x - 5.5, x + 2.5].forEach(ex => { const gr = g.createRadialGradient(ex + 1.5, o + 30, 1, ex + 1.5, o + 30, 15 * glow); gr.addColorStop(0, 'rgba(255,255,255,.95)'); gr.addColorStop(.35, rage ? 'rgba(255,90,90,.55)' : 'rgba(210,240,255,.5)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.beginPath(); g.arc(ex + 1.5, o + 30, 15 * glow, 0, 7); g.fill(); g.fillStyle = '#fff'; g.fillRect(ex, o + 28.5, 3, 3); });
+}
+function onLaser(g, a, t, G) {
+  const q = (performance.now() - a.t0) / 3000, r = G.rects[a.slot]; if (!r) return;
+  const tx = r[0] + r[2] / 2, ty = r[1] + r[3] / 2, on = q < .85 ? (Math.sin(q * 60) > -.55 ? 1 : .35) : 1 - (q - .85) / .15, ey = ON_WATCHER_Y + 30;
+  g.save(); g.lineCap = 'round';
+  [[G.cx - 3, ey], [G.cx + 3, ey]].forEach(([ex, y]) => {
+    g.strokeStyle = `rgba(255,40,40,${.35 * on})`; g.lineWidth = 16; g.beginPath(); g.moveTo(ex, y); g.lineTo(tx, ty); g.stroke();
+    g.strokeStyle = `rgba(255,120,120,${.8 * on})`; g.lineWidth = 6; g.beginPath(); g.moveTo(ex, y); g.lineTo(tx, ty); g.stroke();
+    g.strokeStyle = `rgba(255,255,255,${on})`; g.lineWidth = 2; g.beginPath(); g.moveTo(ex, y); g.lineTo(tx, ty); g.stroke(); });
+  g.fillStyle = `rgba(255,30,30,${.3 * on * (.6 + .4 * Math.sin(t * 25))})`; g.fillRect(r[0] - 10, r[1] - 10, r[2] + 20, r[3] + 20);
+  for (let i = 0; i < 14; i++) { const an = i * .45 + t * 3, rr = 20 + (i % 4) * 22 + q * 40; g.fillStyle = `rgba(255,${120 + (i % 3) * 50},60,${.8 * on})`; g.beginPath(); g.arc(tx + Math.cos(an) * rr, ty + Math.sin(an) * rr * .7, 4, 0, 7); g.fill(); }
+  g.restore();
+}
+const ON_WATCHER_LINES = ['I see everything.', 'Do your own maths.', 'Nice island. Shame about the cheating.', 'Blink, and I am still watching.'];
+function onMerchBoat(g, x, y, t, premium, i) {
+  const bob = Math.sin(t * 1.6 + i) * 4;
+  g.save(); g.translate(x, y + bob);
+  g.fillStyle = '#6b4423'; g.beginPath(); g.moveTo(-30, 0); g.lineTo(32, 0); g.lineTo(24, 14); g.lineTo(-22, 14); g.closePath(); g.fill();
+  g.fillStyle = '#8a5f38'; g.fillRect(-20, -10, 40, 10); g.fillStyle = premium ? '#E0A33E' : '#c8323c'; g.fillRect(-2, -42, 3, 42);
+  for (let k = 0; k < 5; k++) { g.fillStyle = k % 2 ? '#fff' : (premium ? '#E0A33E' : '#2e6a9c'); g.beginPath(); g.moveTo(1, -40 + k * 6); g.lineTo(26, -34 + k * 6); g.lineTo(26, -28 + k * 6); g.lineTo(1, -34 + k * 6); g.fill(); }
+  g.fillStyle = '#ffd36b'; g.beginPath(); g.arc(-22, -6, 4 + Math.sin(t * 5 + i) * .6, 0, 7); g.fill();
+  if (premium) { for (let k = 0; k < 5; k++) { g.fillStyle = `rgba(255,230,120,${.5 + .5 * Math.sin(t * 4 + k)})`; g.beginPath(); g.arc(-34 + k * 17, -50 + Math.sin(t * 3 + k) * 6, 3, 0, 7); g.fill(); } }
+  g.restore();
+}
+
+/* ---- other people's islands are painted with the game's own drawing code, from what they last told us ---- */
+function onPaintBoard() {   /* what draw() paints, once, without moving anyone or scheduling another frame */
+  ctx.clearRect(0, 0, cv.width, cv.height); drawGround();
+  const items = [];
+  for (let gy = 0; gy < GRID.rows; gy++) for (let gx = 0; gx < GRID.cols; gx++) {
+    const t = terrainAt(gx, gy);
+    if (t === 'tree') { const x = gridCX(gx) + (hash(gx, gy) - .5) * 14, y = tileY(gy) + D * .78, s = .78 + hash(gy, gx) * .22; items.push({ y, f: () => drawTree(x, y, s) }); }
+    if (t === 'rock') { const x = gridCX(gx), y = tileY(gy) + D * .75, s = .85 + hash(gx, gy) * .15; items.push({ y, f: () => drawRock(x, y, s) }); }
+  }
+  state.buildings.filter(b => b.type !== 'bridge').forEach(b => items.push({ y: tileY(b.gy + sizeOf(b)[1]) - 4, f: () => drawBuilding(b) }));
+  const time = performance.now(); state.walkers.forEach(w => items.push({ y: w.y, f: () => drawWalker(w, time) }));
+  items.sort((a, b) => a.y - b.y).forEach(it => it.f());
+}
+function onTerrainFrom(st) {
+  const C = GRID.cols, R = GRID.rows, t = Array.from(st.ter, c => ({ g: 'grass', t: 'tree', r: 'rock', w: 'water' })[c] || 'grass');
+  while (t.length < C * R) t.push('grass');
+  t.roadRow = (st.rr && st.rr.length === C) ? st.rr.slice() : Array.from({ length: C }, () => Math.floor(R / 2));
+  t.road = new Set(); t.roadRow.forEach((ry, x) => { t.road.add(ry * C + x); if (x > 0 && ry !== t.roadRow[x - 1]) t.road.add(ry * C + x - 1); });
+  t.branch = []; return t;
+}
+function onRenderBoard(p) {
+  const st = p.stats; if (!st || !st.ter) return null;
+  const bd = ON.bd[p.slot] || (ON.bd[p.slot] = { c: document.createElement('canvas'), t: 0, last: null, from: [], to: [], t0: 0 });
+  if (bd.c.width !== cv.width || bd.c.height !== cv.height) { bd.c.width = cv.width; bd.c.height = cv.height; bd.t = 0; }
+  const now = performance.now(); if (now - bd.t < 240) return bd.c; bd.t = now;
+  if (bd.last !== st) {   /* new numbers: the settlers glide from where they were to where they are now */
+    const k = Math.min(1, (now - bd.t0) / 1400); bd.from = (bd.to || []).map((w, i) => { const f = (bd.from && bd.from[i]) || w; return [f[0] + (w[0] - f[0]) * k, f[1] + (w[1] - f[1]) * k]; });
+    bd.to = st.wk || []; if (bd.from.length !== bd.to.length) bd.from = bd.to.map(w => [w[0], w[1]]); bd.t0 = now; bd.last = st;
+  }
+  const k = Math.min(1, (now - bd.t0) / 1400), RK = Object.keys(ROLES);
+  const saved = Object.assign({}, state);
+  try {
+    for (const key of Object.keys(state)) delete state[key];
+    Object.assign(state, saved, {
+      terrain: onTerrainFrom(st), buildings: (st.bl || []).map((b, i) => ({ id: -1 - i, type: b[0], gx: b[1], gy: b[2], progress: b[3] })).filter(b => BUILDINGS[b.type]),
+      walkers: bd.to.map((w, i) => { const f = bd.from[i] || w; return { x: f[0] + (w[0] - f[0]) * k, y: f[1] + (w[1] - f[1]) * k, path: null, bob: i * 1.7, role: RK[w[2]] || 'unassigned', lead: !!w[3], speed: 0 }; }),
+      people: [], phase: 'sim', selectedPlaced: null, leaderLook: {}, gather: null, hover: null, tool: null });
+    reachCache = null; landCache = null; walkCache = null; futureCache = null; planCache = null;
+    onPaintBoard(); bd.c.getContext('2d').clearRect(0, 0, bd.c.width, bd.c.height); bd.c.getContext('2d').drawImage(cv, 0, 0);
+  } finally {
+    for (const key of Object.keys(state)) delete state[key];
+    Object.assign(state, saved);
+    reachCache = null; landCache = null; walkCache = null; futureCache = null; planCache = null;
+    onPaintBoard();   /* put your own board back before anything is shown */
+  }
+  return bd.c;
+}
+function onRocks(g, x, y, w, h, seed) {   /* a wall of grey rock, like the one along the top of the village */
+  const rnd = onRng(seed), horiz = w >= h, n = Math.round((horiz ? w : h) / 13);
+  g.fillStyle = '#4f535d'; g.fillRect(x, y, w, h);
+  for (let i = 0; i < n; i++) {
+    const px = horiz ? x + i * (w / n) : x, py = horiz ? y : y + i * (h / n), sw = horiz ? w / n : w, sh = horiz ? h : h / n;
+    for (let k = 0; k < 2; k++) {
+      const ox = px + rnd() * sw * .45, oy = py + rnd() * sh * .45, ww = sw * (.75 + rnd() * .5), hh = sh * (.75 + rnd() * .5);
+      g.fillStyle = ['#8a8e99', '#9da1ab', '#767a85', '#6a6e78'][Math.floor(rnd() * 4)]; g.strokeStyle = '#32353d'; g.lineWidth = 1.4;
+      g.beginPath(); g.moveTo(ox, oy + hh * .2); g.lineTo(ox + ww * .3, oy); g.lineTo(ox + ww * .8, oy + hh * .1); g.lineTo(ox + ww, oy + hh * .6); g.lineTo(ox + ww * .6, oy + hh); g.lineTo(ox + ww * .1, oy + hh * .9); g.closePath(); g.fill(); g.stroke();
+    }
+  }
+}
 function onWorldFrame(ts) {
-  const cv = el('worldCanvas');
-  if (!cv || el('worldMap').classList.contains('hide') || !ON.room) { ON.raf = 0; return; }
-  const g = cv.getContext('2d'), t = ts / 1000, R = ON.room, n = R.players.length, isl = onIslands(n), CW = cv.width, CH = cv.height, W = OWW, H = OWH;
-  const T = onCamFor(cv, n, ON.focus);
+  const cv2 = el('worldCanvas');
+  if (!cv2 || el('worldMap').classList.contains('hide') || !ON.room) { ON.raf = 0; return; }
+  const g = cv2.getContext('2d'), t = ts / 1000, R = ON.room, n = R.players.length, G = onGeom(n), CW = cv2.width, CH = cv2.height, W = G.WW, H = G.WH, isl = G.rects;
+  const T = onCamFor(cv2, G, ON.focus);
   if (!ON.cam) ON.cam = Object.assign({}, T);
-  const cam = ON.cam; cam.s += (T.s - cam.s) * .13; cam.x += (T.x - cam.x) * .13; cam.y += (T.y - cam.y) * .13;
+  const dt = Math.min(.12, (ts - (ON.lastTs || ts)) / 1000); ON.lastTs = ts; const kk = 1 - Math.exp(-dt * 8);
+  const cam = ON.cam; cam.s += (T.s - cam.s) * kk; cam.x += (T.x - cam.x) * kk; cam.y += (T.y - cam.y) * kk;
+  if (ON.focus === ON.slot && Math.abs(cam.s - T.s) < T.s * .03) { el('worldMap').classList.add('hide'); ON.focus = null; ON.cam = null; ON.raf = 0; onZoomUI(); return; }   /* you have arrived at your own island: it is the village itself */
+  const zoomedIn = cam.s > Math.min(CW / W, CH / H) * 1.25;
   const labels = [], lab = (text, wx, wy, px, col, bold) => labels.push([text, wx, wy, px, col, bold]);
-  g.setTransform(1, 0, 0, 1, 0, 0);
-  const grad = g.createLinearGradient(0, 0, 0, CH); grad.addColorStop(0, '#86c8ec'); grad.addColorStop(1, '#5aa4d4'); g.fillStyle = grad; g.fillRect(0, 0, CW, CH);
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#e6f0f8'; g.fillRect(0, 0, CW, CH);
   g.setTransform(cam.s, 0, 0, cam.s, cam.x, cam.y);
-  g.fillStyle = 'rgba(40,110,170,.18)'; g.fillRect(-W, -H, W * 3, H * 3);
-  g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1.5;
-  for (let y = 14; y < H; y += 30) { g.beginPath(); for (let x = 0; x <= W; x += 14) { const yy = y + Math.sin(x / 42 + t * 1.3 + y) * 2.4; x ? g.lineTo(x, yy) : g.moveTo(x, yy); } g.stroke(); }
-  /* the world's edge: little islets, rocks and a few clouds */
-  ON_ISLETS.forEach(([x, y, r], i) => { g.fillStyle = '#ead9a6'; g.beginPath(); g.ellipse(x, y, r + 6, (r + 6) * .7, 0, 0, 7); g.fill(); g.fillStyle = '#b6dc8f'; g.beginPath(); g.ellipse(x, y, r, r * .66, 0, 0, 7); g.fill(); g.strokeStyle = '#6b4a2a'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 3, y - r * .8); g.stroke(); g.fillStyle = '#3f8f4f'; for (let k = 0; k < 4; k++) { g.beginPath(); g.ellipse(x + 3 + Math.cos(k * 1.6) * 9, y - r * .8 + Math.sin(k * 1.6) * 5, 9, 3, k * .8, 0, 7); g.fill(); } });
-  g.fillStyle = 'rgba(255,255,255,.55)';
-  for (let i = 0; i < 5; i++) { const cx = ((t * (5 + i * 2) + i * 330) % (W + 400)) - 200, cy = 70 + i * 170; g.beginPath(); g.ellipse(cx, cy, 70, 18, 0, 0, 7); g.ellipse(cx + 38, cy - 9, 44, 15, 0, 0, 7); g.ellipse(cx - 34, cy - 6, 38, 13, 0, 0, 7); g.fill(); }
-  const ctr = (slot) => { const r = isl[slot]; return [r[0] + r[2] / 2, r[1] + r[3] / 2]; };
+  /* the water: one wide river up the middle and one across, inside a frame of rock */
+  g.fillStyle = '#bdd9ef'; g.fillRect(G.fw, G.top, W - G.fw * 2, H - G.top - G.fw);
+  g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 2.4; g.lineCap = 'round';
+  const wr = onRng(5);
+  for (let i = 0; i < 16; i++) { const y = G.top + 14 + i * ((H - G.top - G.fw - 28) / 15), dx = Math.sin(t * 1.3 + i) * 4; g.beginPath(); g.moveTo(G.cx - 30 + dx + wr() * 60, y); g.quadraticCurveTo(G.cx - 36 + dx + wr() * 70, y + 8, G.cx - 30 + dx + wr() * 60, y + 16); g.stroke(); }
+  if (n > 2) for (let i = 0; i < 22; i++) { const x = G.fw + 14 + i * ((W - G.fw * 2 - 28) / 21), dy = Math.sin(t * 1.2 + i) * 3; g.beginPath(); g.moveTo(x, G.rowY - 14 + dy + wr() * 20); g.quadraticCurveTo(x + 9, G.rowY - 6 + dy + wr() * 12, x + 18, G.rowY - 14 + dy + wr() * 20); g.stroke(); }
+  /* every island is that player's real board, live */
   R.players.forEach(p => {
-    const r = isl[p.slot], col = ON_COLORS[p.slot], st = p.stats || {}, me = p.slot === ON.slot;
-    g.fillStyle = '#ead9a6'; g.beginPath(); g.roundRect(r[0] - 9, r[1] - 9, r[2] + 18, r[3] + 18, 54); g.fill();
-    g.fillStyle = '#b6dc8f'; g.beginPath(); g.roundRect(r[0], r[1], r[2], r[3], 46); g.fill();
-    g.lineWidth = me ? 5 : 3; g.strokeStyle = col; g.stroke();
-    const rnd = onRng(97 + p.slot * 31);
-    for (let i = 0; i < 16; i++) { const x = r[0] + 24 + rnd() * (r[2] - 48), y = r[1] + 40 + rnd() * (r[3] - 70); g.fillStyle = '#4f9a58'; g.beginPath(); g.arc(x, y, 5 + rnd() * 3, 0, 7); g.fill(); }
-    const ix = r[0] + 22, iy = r[1] + 40, sx = (r[2] - 44) / 15, sy = (r[3] - 62) / 11;
-    (st.map || []).forEach(([type, gx, gy]) => {
-      const def = BUILDINGS[type] || { color: '#999', name: type }, sz = def.size || [1, 1], x = ix + gx * sx, y = iy + gy * sy, w = sz[0] * sx * .9, h = sz[1] * sy * .9;
-      g.fillStyle = def.color; g.strokeStyle = '#2b2018'; g.lineWidth = 1; g.beginPath(); g.roundRect(x, y, w, h, 2); g.fill(); g.stroke();
-      if (type === 'shelter' || type === 'barracks' || type === 'tavern') { g.fillStyle = type === 'barracks' ? '#8e3b2e' : '#c4572e'; g.beginPath(); g.moveTo(x - 1, y + 1); g.lineTo(x + w / 2, y - 5); g.lineTo(x + w + 1, y + 1); g.fill(); }
-      if (cam.s > 1.7 && ON.focus === p.slot) lab(def.name || type, x + w / 2, y + h + 2, 12, '#1e2a38', true);
-    });
-    const dots = Math.min(34, st.pop || 0), rd = onRng(7 + p.slot);
-    for (let i = 0; i < dots; i++) { const bx = r[0] + 30 + rd() * (r[2] - 60), by = r[1] + 46 + rd() * (r[3] - 80); g.fillStyle = col; g.beginPath(); g.arc(bx + Math.sin(t * .8 + i) * 3, by + Math.cos(t * .7 + i * 2) * 2, 2.4, 0, 7); g.fill(); }
-    for (let i = 0; i < Math.min(4, st.ships || 0); i++) { const left = r[0] < 720, bx = left ? r[0] + r[2] + 30 : r[0] - 30, by = r[1] + 30 + i * (r[3] - 60) / 4 + Math.sin(t * 1.2 + i) * 3; onShip(g, bx, by, ON_COLORS[p.slot], left ? 1 : -1); }
-    for (let i = 0; i < Math.min(4, st.tanks || 0); i++) onTank(g, r[0] + 40 + i * 34, r[1] + r[3] - 26, ON_COLORS[p.slot], 1);
-    if (st.boats && !st.ships) { const bx = r[0] < 720 ? r[0] + r[2] + 20 : r[0] - 20, by = r[1] + r[3] / 2 + Math.sin(t * 1.5 + p.slot) * 4; g.fillStyle = '#8a5f38'; g.fillRect(bx - 9, by, 18, 5); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx, by - 13); g.lineTo(bx + 8, by - 3); g.fill(); }
+    const r = isl[p.slot]; let src = null;
+    if (p.slot === ON.slot) src = cv; else src = onRenderBoard(p);
+    if (src) g.drawImage(src, 0, GRID.oy, src.width, src.height - GRID.oy, r[0], r[1], r[2], r[3]);
+    else { g.fillStyle = '#d7e4da'; g.fillRect(r[0], r[1], r[2], r[3]); }
+    const own = R.owners && R.owners[p.slot] != null;
+    if (own) { g.fillStyle = ON_COLORS[R.owners[p.slot]] + '55'; g.fillRect(r[0], r[1], r[2], r[3]); }
+    g.strokeStyle = '#8a6a43'; g.lineWidth = 2.5; g.strokeRect(r[0], r[1], r[2], r[3]);
+    if (p.slot === ON.slot || (R.owners && R.owners[p.slot] === ON.slot)) { g.strokeStyle = ON_COLORS[ON.slot]; g.lineWidth = 5; g.setLineDash([12, 8]); g.strokeRect(r[0] - 3, r[1] - 3, r[2] + 6, r[3] + 6); g.setLineDash([]); }
+  });
+  /* the rock frame */
+  const fw = G.fw;
+  onRocks(g, 0, G.top - fw, W, fw, 1); onRocks(g, 0, G.top - fw, fw, H - G.top + fw, 2); onRocks(g, W - fw, G.top - fw, fw, H - G.top + fw, 3); onRocks(g, 0, H - fw, W, fw, 4);
+  const ctr = (slot) => { const r = isl[slot]; return [r[0] + r[2] / 2, r[1] + r[3] / 2]; };
+  R.players.forEach(p => {   /* ships and tanks sit in the river beside their island */
+    const r = isl[p.slot], st = p.stats || {}, col = ON_COLORS[p.slot], left = r[0] < W / 2;
+    for (let i = 0; i < Math.min(4, st.ships || 0); i++) onShip(g, left ? r[0] + r[2] + 28 : r[0] - 28, r[1] + 30 + i * (r[3] - 60) / 4 + Math.sin(t * 1.2 + i) * 3, col, left ? 1 : -1);
+    if (st.boats && !st.ships) { const bx = left ? r[0] + r[2] + 26 : r[0] - 26, by = r[1] + r[3] / 2 + Math.sin(t * 1.5 + p.slot) * 4; g.fillStyle = '#8a5f38'; g.fillRect(bx - 9, by, 18, 5); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx, by - 13); g.lineTo(bx + 8, by - 3); g.fill(); }
   });
   Object.keys(R.relations).forEach(k => {
     if (R.relations[k] !== 'war') return; const [a, b] = k.split('-').map(Number), A = ctr(a), B = ctr(b), mx = (A[0] + B[0]) / 2, my = (A[1] + B[1]) / 2;
-    g.strokeStyle = '#b3261e'; g.lineWidth = 4; g.setLineDash([10, 7]); g.lineDashOffset = -t * 20; g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(B[0], B[1]); g.stroke(); g.setLineDash([]);
-    g.fillStyle = '#fff'; g.beginPath(); g.arc(mx, my, 13, 0, 7); g.fill(); g.strokeStyle = '#b3261e'; g.lineWidth = 3; g.beginPath(); g.moveTo(mx - 7, my - 7); g.lineTo(mx + 7, my + 7); g.moveTo(mx + 7, my - 7); g.lineTo(mx - 7, my + 7); g.stroke();
+    g.strokeStyle = '#d22f27'; g.lineWidth = 5; g.setLineDash([12, 8]); g.lineDashOffset = -t * 22; g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(B[0], B[1]); g.stroke(); g.setLineDash([]);
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(mx, my, 15, 0, 7); g.fill(); g.strokeStyle = '#d22f27'; g.lineWidth = 3.5; g.beginPath(); g.moveTo(mx - 8, my - 8); g.lineTo(mx + 8, my + 8); g.moveTo(mx + 8, my - 8); g.lineTo(mx - 8, my + 8); g.stroke();
   });
-  const spots = onSpots(n);
+  const nw = performance.now(); ON.lasers = (ON.lasers || []).filter(a => nw - a.t0 < 3000);
+    if (!zoomedIn) { onWatcher(g, t, ON.lasers.length > 0, G.cx); lab('Mr Lovegrove - The Watcher', G.cx, ON_WATCHER_Y + 6, 17, '#1b2a3a', true); }
+  if (ON.say && nw - ON.say.t0 < 2600) lab(ON.say.text, G.cx, ON_WATCHER_Y - 4, 20, '#7a3b12', true);
+  (R.merchants || []).forEach((m, i) => { const d = G.docks[i % G.docks.length]; onMerchBoat(g, d[0], d[1], t, m.premium, i); lab(`${m.name} the ${MERCH[m.name].job}`, d[0], d[1] + 40, 16, m.premium ? '#ffe08a' : '#ffffff', true); if (m.premium) lab('Rare goods!', d[0], d[1] + 59, 14, '#ffd36b', true); });
+  ON.lasers.forEach(a => onLaser(g, a, t, G));
+
+  const spots = G.spots;
   if (R.treasure) {
     const [x, y] = spots[R.treasure.spot % spots.length], pulse = 1 + Math.sin(t * 4) * .15;
-    g.fillStyle = 'rgba(255,230,120,.5)'; g.beginPath(); g.arc(x, y, 26 * pulse, 0, 7); g.fill();
+    g.fillStyle = 'rgba(255,230,120,.6)'; g.beginPath(); g.arc(x, y, 26 * pulse, 0, 7); g.fill();
     g.strokeStyle = R.treasure.kind === 'monster' ? '#1f6b3a' : '#7a3b12'; g.lineWidth = 5; g.lineCap = 'round';
     if (R.treasure.kind === 'monster') { g.beginPath(); g.arc(x - 8, y + 4, 8, Math.PI, 0); g.arc(x + 8, y + 4, 8, Math.PI, 0); g.stroke(); }
     else if (R.treasure.kind === 'idol') { g.fillStyle = '#e0a33e'; g.beginPath(); g.arc(x, y - 4, 8, 0, 7); g.fill(); g.fillRect(x - 6, y + 2, 12, 10); }
@@ -49009,51 +49288,54 @@ function onWorldFrame(ts) {
     const A = ctr(a.a), B = ctr(a.d), x = A[0] + (B[0] - A[0]) * p, y = A[1] + (B[1] - A[1]) * p;
     if (p < 1) {
       const as = (R.players[a.a] && R.players[a.a].stats) || {}, dir = B[0] >= A[0] ? 1 : -1;
-      if (as.ships) { for (let i = 0; i < Math.min(3, as.ships); i++) onShip(g, x - dir * i * 22, y + i * 10 + Math.sin(t * 8 + i) * 2, ON_COLORS[a.a], dir); }
-      if (as.tanks) { for (let i = 0; i < Math.min(3, as.tanks); i++) onTank(g, x - dir * i * 26, y - 16 - i * 4, ON_COLORS[a.a], dir); }
+      if (as.ships) { for (let i = 0; i < Math.min(3, as.ships); i++) onShip(g, x - dir * i * 22, y + i * 10 + Math.sin(t * 8 + i) * 2, ON_COLORS[a.a], dir * 1.4); }
+      if (as.tanks) { for (let i = 0; i < Math.min(3, as.tanks); i++) onTank(g, x - dir * i * 26, y - 16 - i * 4, ON_COLORS[a.a], dir * 1.4); }
       if (!as.ships || (as.units || 0) > (as.ships || 0)) { for (let i = 0; i < 6; i++) { g.fillStyle = ON_COLORS[a.a]; g.fillRect(x - 12 + (i % 3) * 8, y + 14 + Math.floor(i / 3) * 9 + Math.sin(t * 12 + i) * 1.5, 5, 7); } }
       g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.moveTo(x + 14, y - 14); g.lineTo(x + 14, y + 4); g.stroke(); }
-    else { const q = (now - a.t0 - 2200) / 1200; g.strokeStyle = a.win === 'a' ? ON_COLORS[a.a] : a.win === 'd' ? ON_COLORS[a.d] : '#555'; g.lineWidth = 4; g.beginPath(); g.arc(B[0], B[1], 20 + q * 60, 0, 7); g.stroke(); lab(a.win === 'a' ? `${onName(a.a)} wins!` : a.win === 'd' ? `${onName(a.d)} holds!` : 'Stalemate', B[0], B[1] - 36 - q * 12, 22, '#fff', true); }
+    else { const q = (now - a.t0 - 2200) / 1200; g.strokeStyle = a.win === 'a' ? ON_COLORS[a.a] : a.win === 'd' ? ON_COLORS[a.d] : '#555'; g.lineWidth = 4; g.beginPath(); g.arc(B[0], B[1], 20 + q * 60, 0, 7); g.stroke(); lab(a.win === 'a' ? `${onName(a.a)} wins!` : a.win === 'd' ? `${onName(a.d)} holds!` : 'Stalemate', B[0], B[1] - 36 - q * 12, 24, '#fff', true); }
   });
   ON.eggs = ON.eggs.filter(e => now - e.t0 < 6500);
   ON.eggs.forEach(e => {
     const q = (now - e.t0) / 6500;
-    if (e.k === 'dragon') { const x = -80 + q * (W + 160), y = 200 + Math.sin(q * 9) * 40; g.fillStyle = '#7a1f2b'; g.beginPath(); g.ellipse(x, y, 34, 11, 0, 0, 7); g.fill(); g.beginPath(); g.arc(x + 36, y - 4, 9, 0, 7); g.fill(); g.fillStyle = '#b3402e'; g.beginPath(); g.moveTo(x - 6, y - 4); g.lineTo(x + 12, y - 40 + Math.sin(t * 14) * 10); g.lineTo(x + 24, y - 4); g.fill(); g.fillStyle = '#f4a23a'; g.beginPath(); g.moveTo(x + 46, y - 4); g.lineTo(x + 70 + Math.random() * 10, y - 8); g.lineTo(x + 46, y + 2); g.fill(); }
-    else if (e.k === 'ducks') { for (let i = 0; i < 7; i++) { const sp = spots[i % spots.length], y = ((q * H * 1.1 + i * 120) % (H + 20)); g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(sp[0] + Math.sin(t * 2 + i) * 14, y, 8, 0, 7); g.fill(); g.fillStyle = '#f08a24'; g.fillRect(sp[0] + 7 + Math.sin(t * 2 + i) * 14, y - 1, 7, 3); } }
+    if (e.k === 'dragon') { const x = -80 + q * (W + 160), y = G.top + 60 + Math.sin(q * 9) * 40; g.fillStyle = '#7a1f2b'; g.beginPath(); g.ellipse(x, y, 34, 11, 0, 0, 7); g.fill(); g.beginPath(); g.arc(x + 36, y - 4, 9, 0, 7); g.fill(); g.fillStyle = '#b3402e'; g.beginPath(); g.moveTo(x - 6, y - 4); g.lineTo(x + 12, y - 40 + Math.sin(t * 14) * 10); g.lineTo(x + 24, y - 4); g.fill(); g.fillStyle = '#f4a23a'; g.beginPath(); g.moveTo(x + 46, y - 4); g.lineTo(x + 70 + Math.random() * 10, y - 8); g.lineTo(x + 46, y + 2); g.fill(); }
+    else if (e.k === 'ducks') { for (let i = 0; i < 6; i++) { const y = G.top + 20 + ((q * (H - G.top) * 1.1 + i * 110) % (H - G.top - 20)); g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(G.cx + Math.sin(t * 2 + i) * 30, y, 9, 0, 7); g.fill(); g.fillStyle = '#f08a24'; g.fillRect(G.cx + 8 + Math.sin(t * 2 + i) * 30, y - 1, 7, 3); } }
     else if (e.k === 'party') { const rnd = onRng(Math.floor(e.t0) % 999 + 1); for (let i = 0; i < 110; i++) { const x = rnd() * W, y = ((rnd() * H + q * 700) % H); g.fillStyle = ['#e4572e', '#f4c542', '#2e6a9c', '#2e7d5b', '#b04aa5'][i % 5]; g.fillRect(x + Math.sin(t * 3 + i) * 6, y, 8, 12); } }
-    else if (e.k === 'tank') { for (let i = 0; i < 4; i++) onTank(g, -40 + q * (W + 120) - i * 56, 440 + (i % 2) * 10 + Math.sin(t * 10 + i) * 1.5, ON_COLORS[i % 4], 1.4); }
-    else if (e.k === 'armada') { for (let i = 0; i < 5; i++) onShip(g, W + 40 - q * (W + 140) + i * 60, 400 + (i % 3) * 30 + Math.sin(t * 2 + i) * 4, ON_COLORS[i % 4], -1.4); }
+    else if (e.k === 'tank') { for (let i = 0; i < 4; i++) onTank(g, -40 + q * (W + 120) - i * 56, G.rowY + (i % 2) * 8, ON_COLORS[i % 4], 1.4); }
+    else if (e.k === 'armada') { for (let i = 0; i < 5; i++) onShip(g, W + 40 - q * (W + 140) + i * 60, G.rowY + (i % 3) * 14 - 14, ON_COLORS[i % 4], -1.4); }
     else if (e.k === 'nessie') { const sp = spots[0], k = Math.sin(q * Math.PI); g.strokeStyle = '#1f6b3a'; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); g.moveTo(sp[0] - 40, sp[1] + 10); g.quadraticCurveTo(sp[0] - 20, sp[1] - 38 * k, sp[0], sp[1] + 8); g.quadraticCurveTo(sp[0] + 18, sp[1] - 52 * k, sp[0] + 38, sp[1] + 8); g.stroke(); g.fillStyle = '#1f6b3a'; g.beginPath(); g.arc(sp[0] + 38, sp[1] - 8 * k, 8, 0, 7); g.fill(); }
   });
   /* writing is drawn at a steady size on the screen, wherever the camera is */
-  g.setTransform(1, 0, 0, 1, 0, 0); g.textBaseline = 'middle';
+  g.setTransform(1, 0, 0, 1, 0, 0); g.textBaseline = 'middle'; g.textAlign = 'left';
   R.players.forEach(p => {
-    const r = isl[p.slot], st = p.stats || {}, me = p.slot === ON.slot, col = ON_COLORS[p.slot];
-    const bx = cam.x + r[0] * cam.s, by = cam.y + r[1] * cam.s - 30, label = `${p.name}${me ? ' (you)' : ''}  ${st.pop == null ? '' : st.pop}`;
-    g.font = '700 22px sans-serif'; const w = g.measureText(label).width + 26;
-    g.fillStyle = col; g.beginPath(); g.roundRect(bx, by - 15, w, 30, 15); g.fill(); g.fillStyle = '#fff'; g.fillText(label, bx + 13, by + 1);
-    const sub = p.done ? 'FINISHED' : !p.connected ? 'DISCONNECTED' : st.att != null ? `Att ${st.att}  Def ${st.def}` : '';
-    if (sub) { g.font = '600 17px sans-serif'; g.fillStyle = '#12304a'; g.textAlign = 'right'; g.fillText(sub, cam.x + (r[0] + r[2]) * cam.s, cam.y + (r[1] + r[3]) * cam.s + 24); g.textAlign = 'left'; }
+    const r = isl[p.slot], st = p.stats || {}, col = ON_COLORS[p.slot], me = p.slot === ON.slot, ow = R.owners && R.owners[p.slot] != null;
+    const bx = cam.x + r[0] * cam.s + 8, by = cam.y + r[1] * cam.s + 8, label = p.name + (me ? ' (you)' : '') + (ow ? ' (taken)' : '') + (st.pop != null && !ow ? '  ' + st.pop : '');
+    g.font = '800 20px sans-serif'; const w = g.measureText(label).width + 22;
+    g.fillStyle = col; g.strokeStyle = '#1a1a1a'; g.lineWidth = 3; g.beginPath(); g.roundRect(bx, by, w, 32, 10); g.fill(); g.stroke();
+    g.lineWidth = 4; g.strokeStyle = '#1a1a1a'; g.strokeText(label, bx + 11, by + 17); g.fillStyle = '#fff'; g.fillText(label, bx + 11, by + 17);
   });
-  labels.forEach(([text, wx, wy, px, col, bold]) => { g.font = `${bold ? '700' : '500'} ${px}px sans-serif`; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = 'rgba(20,40,60,.55)'; const X = cam.x + wx * cam.s, Y = cam.y + wy * cam.s; g.strokeText(text, X, Y); g.fillStyle = col; g.fillText(text, X, Y); g.textAlign = 'left'; });
-  if (ON.focus != null && cam.s > 1.6 && R.players[ON.focus]) {   /* a card for the island you are looking at */
-    const p = R.players[ON.focus], st = p.stats || {}, rows = [`Settlers ${st.pop == null ? '?' : st.pop}`, `Soldiers ${st.soldiers || 0}   Army ${st.units || 0}`, `Ships ${st.ships || 0}   Tanks ${st.tanks || 0}`, `Food ${st.food == null ? '?' : st.food}   Materials ${st.materials == null ? '?' : st.materials}`];
-    g.fillStyle = 'rgba(255,255,255,.88)'; g.beginPath(); g.roundRect(CW - 300, 14, 286, 28 + rows.length * 26, 12); g.fill();
-    g.fillStyle = ON_COLORS[p.slot]; g.font = '700 20px sans-serif'; g.fillText(p.name, CW - 286, 34); g.fillStyle = '#1e2a38'; g.font = '500 17px sans-serif'; rows.forEach((tx, i) => g.fillText(tx, CW - 286, 62 + i * 26));
+  g.textAlign = 'center';
+  labels.forEach(([text, wx, wy, px, col, bold]) => { g.font = `${bold ? '700' : '500'} ${px}px sans-serif`; g.lineWidth = 4; g.strokeStyle = 'rgba(20,40,60,.65)'; const X = cam.x + wx * cam.s, Y = cam.y + wy * cam.s; g.strokeText(text, X, Y); g.fillStyle = col; g.fillText(text, X, Y); });
+  if (zoomedIn) {   /* zoomed in, so the Watcher watches from the top edge of the picture */
+    const k = Math.min(1, CW / 1100) * .8; g.save(); g.setTransform(k, 0, 0, k, CW / 2, 2); onWatcher(g, t, ON.lasers.length > 0, 0); g.restore();
+    g.font = '700 14px sans-serif'; g.lineWidth = 4; g.strokeStyle = 'rgba(10,30,50,.75)'; g.strokeText('Mr Lovegrove - The Watcher', CW / 2, 4 + 120 * k); g.fillStyle = '#fff'; g.fillText('Mr Lovegrove - The Watcher', CW / 2, 4 + 120 * k);
   }
-  g.fillStyle = 'rgba(18,48,74,.8)'; g.font = '700 18px sans-serif'; g.fillText('N', 26, CH - 52); g.strokeStyle = 'rgba(18,48,74,.8)'; g.lineWidth = 3; g.beginPath(); g.moveTo(32, CH - 42); g.lineTo(32, CH - 14); g.moveTo(18, CH - 28); g.lineTo(46, CH - 28); g.stroke();
+  g.textAlign = 'left';
   ON.raf = requestAnimationFrame(onWorldFrame);
 }
-function onCanvasPt(e) { const cv = el('worldCanvas'), rc = cv.getBoundingClientRect(), x = (e.clientX - rc.left) * cv.width / rc.width, y = (e.clientY - rc.top) * cv.height / rc.height, c = ON.cam || { s: 1, x: 0, y: 0 }; return { x, y, wx: (x - c.x) / c.s, wy: (y - c.y) / c.s, s: c.s }; }
-function onIslandAt(wx, wy) { const R = ON.room; if (!R) return -1; const isl = onIslands(R.players.length); for (let i = 0; i < isl.length; i++) { const r = isl[i]; if (wx > r[0] - 12 && wx < r[0] + r[2] + 12 && wy > r[1] - 12 && wy < r[1] + r[3] + 12) return i; } return -1; }
+function onCanvasPt(e) { const cv2 = el('worldCanvas'), rc = cv2.getBoundingClientRect(), x = (e.clientX - rc.left) * cv2.width / rc.width, y = (e.clientY - rc.top) * cv2.height / rc.height, c = ON.cam || { s: 1, x: 0, y: 0 }; return { x, y, wx: (x - c.x) / c.s, wy: (y - c.y) / c.s, s: c.s }; }
+function onIslandAt(wx, wy) { const R = ON.room; if (!R) return -1; const isl = onGeom(R.players.length).rects; for (let i = 0; i < isl.length; i++) { const r = isl[i]; if (wx > r[0] && wx < r[0] + r[2] && wy > r[1] && wy < r[1] + r[3]) return i; } return -1; }
 el('worldCanvas').addEventListener('click', (e) => {
-  const R = ON.room; if (!R) return; const q = onCanvasPt(e);
-  if (R.treasure && !ON.finished) { const sp = onSpots(R.players.length), [tx, ty] = sp[R.treasure.spot % sp.length]; if (Math.hypot(q.wx - tx, q.wy - ty) < 36 / Math.min(1, q.s) ) { onSend({ t: 'dig', id: R.treasure.id }); return; } }
+  const R = ON.room; if (!R) return; const q = onCanvasPt(e), hit = 44 / Math.min(1, q.s), G = onGeom(R.players.length);
+    if (Math.hypot(q.wx - G.cx, q.wy - (ON_WATCHER_Y + 55)) < 46) { ON.say = { text: ON_WATCHER_LINES[Math.floor(Math.random() * ON_WATCHER_LINES.length)], t0: performance.now() }; return; }
+  for (let i = 0; i < (R.merchants || []).length; i++) { const d = G.docks[i % G.docks.length]; if (Math.hypot(q.wx - d[0], q.wy - d[1]) < hit) { onShopOpen(); return; } }
+
+  if (R.treasure && !ON.finished) { const [tx, ty] = G.spots[R.treasure.spot % G.spots.length]; if (Math.hypot(q.wx - tx, q.wy - ty) < 36 / Math.min(1, q.s)) { onSend({ t: 'dig', id: R.treasure.id }); return; } }
   const i = onIslandAt(q.wx, q.wy);
-  if (i >= 0 && ON.focus !== i) onZoomTo(i); else onZoomTo(null);   /* an island zooms in; the sea, or the same island again, zooms out */
+  if (i >= 0 && ON.focus !== i) onZoomTo(i); else if (i < 0) onZoomTo(null);   /* an island zooms in; the water zooms out */
 });
-el('worldCanvas').addEventListener('mousemove', (e) => { const q = onCanvasPt(e), i = onIslandAt(q.wx, q.wy); el('worldCanvas').style.cursor = i >= 0 && ON.focus !== i ? 'zoom-in' : ON.focus != null ? 'zoom-out' : 'default'; });
-el('worldZoom').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; onZoomTo(b.dataset.zoom === 'me' ? ON.slot : null); });
+el('worldCanvas').addEventListener('mousemove', (e) => { const q = onCanvasPt(e), i = onIslandAt(q.wx, q.wy); el('worldCanvas').style.cursor = i >= 0 && ON.focus !== i ? 'zoom-in' : ON.focus != null && i < 0 ? 'zoom-out' : 'default'; });
+el('worldZoom').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.island != null) onZoomTo(Number(b.dataset.island)); else onZoomTo(ON.focus == null ? onOwned()[0] : null); });
+
 let onTyped = '';
 document.addEventListener('keydown', (e) => {   /* secret words, typed on the world map */
   if (el('worldMap').classList.contains('hide') || !ON.on || e.target.tagName === 'INPUT' || e.key.length !== 1) return;
@@ -49066,11 +49348,12 @@ function onWorldDraw() {
   const chat = el('onChat'), keep = chat ? chat.value : '', focus = chat && document.activeElement === chat;
   const others = ps.filter(p => p.slot !== ON.slot);
   const cards = others.map(p => {
+    if ((R.owners && R.owners[p.slot] != null) || p.done) return `<div class="note" style="margin:0"><b style="color:${ON_COLORS[p.slot]}">${esc(p.name)}</b> ${R.owners && R.owners[p.slot] != null ? 'had their island taken by ' + esc(onName(R.owners[p.slot])) : 'has finished'}.</div>`;
     const war = onAtWar(p.slot), far = L.n === 4 && L.plots[p.slot].x !== L.plots[ON.slot].x && L.plots[p.slot].y !== L.plots[ON.slot].y;
     const offered = R.offers.some(o => o.from === p.slot && o.to === ON.slot), sent = R.offers.some(o => o.from === ON.slot && o.to === p.slot);
     const can = canAfford(ON_DECLARE) && state.year >= 2 && !p.done && !ON.finished;
     const btn = (act, label, dis, extra) => `<button class="btn small ${extra || ''}" data-act="${act}" data-s="${p.slot}" type="button" ${dis ? 'disabled' : ''}>${label}</button>`;
-    return `<div class="note" style="margin:0"><b style="color:${ON_COLORS[p.slot]}">${esc(p.name)}</b> ${war ? '<b style="color:#b3261e">AT WAR</b>' : 'at peace'}${far ? ' (across two rivers, raids are weaker)' : ''}
+    return `<div class="note" style="margin:0"><b style="color:${ON_COLORS[p.slot]}">${esc(p.name)}</b> ${war ? '<b style="color:#b3261e">AT WAR</b>' : 'at peace'}
       <div class="mp-row" style="margin-top:6px">${war
         ? `${btn('peace', offered ? 'Accept peace' : sent ? 'Peace offered' : 'Offer peace', sent && !offered)}${btn('raid', ON.attack === p.slot ? 'Raid planned (cancel)' : 'Send the army this season', p.done || ON.wait, ON.attack === p.slot ? 'btn-primary' : '')}`
         : `${btn('war', `Declare war (${costText(ON_DECLARE)})`, !can)}`}
@@ -49079,6 +49362,7 @@ function onWorldDraw() {
   const a = onArmy();
   panel.innerHTML = `<p class="note" style="margin:8px 0 0">${state.year < 2 ? 'War opens in Season 2. ' : ''}Your army: attack ${a.att}, defence ${a.def}${a.boats ? '' : '. Build a <b>harbour</b> (Season 3) so your boats can cross the river'}. A raid costs ${costText(ON_RAID)} and is settled when everyone starts the next season.</p>
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">${cards}</div>
+    ${(R.merchants || []).length ? `<div class="note" style="margin:8px 0 0"><b>${R.merchants.map(m => `${m.name} the ${MERCH[m.name].job}`).join(' and ')}</b> ${R.merchants.length > 1 ? 'are in port with rare goods!' : 'is in port.'} <button class="btn small" data-act="shop" type="button">Visit the shop</button></div>` : ''}
     ${R.treasure ? '<p class="note" style="margin:8px 0 0"><b>Something is in the river!</b> Click it on the map to dig it up. First there wins.</p>' : ''}
     <h3 style="margin:12px 0 4px;font-size:1rem">News</h3><div id="onFeed" style="max-height:120px;overflow:auto;font-size:.88rem">${ON.feed.slice(-12).reverse().map(f => `<div>${esc(f)}</div>`).join('') || '<div class="note">Nothing yet.</div>'}</div>
     <div class="mp-row" style="margin-top:6px"><input class="mp-in" id="onChat" maxlength="140" placeholder="Say something to everyone"><button class="btn small" data-act="chat" type="button">Send</button></div>`;
@@ -49091,6 +49375,7 @@ el('worldBody').addEventListener('click', (e) => {
   else if (a === 'peace') onSend({ t: 'peace', target: s });
   else if (a === 'raid') { ON.attack = ON.attack === s ? null : s; onWorldDraw(); }
   else if (a === 'gift-food' || a === 'gift-materials') { const res = a === 'gift-food' ? 'food' : 'materials'; if (state.resources[res] < ON_GIFT) return; state.resources[res] -= ON_GIFT; onSend({ t: 'gift', to: s, res, amt: ON_GIFT }); renderAll(); onWorldDraw(); }
+  else if (a === 'shop') onShopOpen();
   else if (a === 'chat') { const i = el('onChat'); if (i && i.value.trim()) { onSend({ t: 'chat', text: i.value }); i.value = ''; } }
 });
 el('worldBody').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'onChat') { e.preventDefault(); const i = e.target; if (i.value.trim()) { onSend({ t: 'chat', text: i.value }); i.value = ''; } } });

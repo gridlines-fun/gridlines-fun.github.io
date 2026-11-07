@@ -23,8 +23,8 @@ export class Room extends DurableObject {
     super(ctx, env);
     this.ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'));   /* keep-alives never wake the room */
   }
-  async load() { return (await this.ctx.storage.get('room')) || null; }
-  async save(room) { await this.ctx.storage.put('room', room); await this.ctx.storage.setAlarm(Date.now() + DAY); }
+  async load() { return this.cache || (this.cache = (await this.ctx.storage.get('room')) || null); }
+  async save(room) { this.cache = room; await this.ctx.storage.put('room', room); await this.ctx.storage.setAlarm(Date.now() + DAY); }
 
   async fetch(request) {
     const pair = new WebSocketPair();
@@ -67,7 +67,7 @@ export class Room extends DurableObject {
     const me = room && room.players.find((x) => x.token === tok);
     if (!me) return;
     const outs = handle(room, me.slot, msg, {});
-    await this.save(room);
+    if (msg.t === 'stats') this.cache = room; else await this.save(room);   /* the live picture is resent every second or so, so it is not written to storage each time */
     this.deliver(room, outs, ws);
   }
 
