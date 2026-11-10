@@ -21,6 +21,8 @@ const TREASURE = {
   idol: { text: 'A golden idol', reward: { knowledge: 15, medicine: 3 } },
   monster: { text: 'The river monster', reward: { food: 30, sat: 4 } },
 };
+/* the real odds; the environment can override them only when testing on a computer */
+const odds = (name, real) => { try { return (typeof process !== 'undefined' && process.env && Number(process.env[name])) || real; } catch (e) { return real; } };
 export const MERCHANT_NAMES = ['Alex', 'Joe', 'Noah', 'Abdullah', 'Karas', 'Oscar', 'Cooper', 'Jonah', 'Moses', 'Harry', 'Kiro', 'Patty', 'Lucas'];
 const EGGS = ['dragon', 'ducks', 'party', 'nessie', 'tank', 'armada'];
 
@@ -30,16 +32,22 @@ export function newRoom(code, mode, now) {
 
 const pub = (r) => ({
   code: r.code, mode: r.mode, phase: r.phase, season: r.season, layout: r.layout, relations: r.relations, offers: r.offers,
-  merchants: pubMerchants(r), owners: r.owners || {},
+  merchants: pubMerchants(r), merchantFor: r.merchantFor == null ? null : r.merchantFor, owners: r.owners || {},
   treasure: r.treasure && !r.treasure.by ? { id: r.treasure.id, kind: r.treasure.kind, spot: r.treasure.spot } : null,
   players: r.players.map((p) => ({ slot: p.slot, name: p.name, connected: p.connected, ready: !!p.ready, done: !!p.done, away: !!p.away, stats: p.stats || null, result: p.result || null })),
 });
 const pubMerchants = (r) => (r.merchants || []).map((m) => ({ id: m.id, name: m.name, premium: m.premium, stock: m.stock }));
-/* every season one trader docks, picked by name. Once in about sixty-seven seasons (1.5%) two arrive together, with rare goods on offer. */
+/* a trader turns up in a quarter of seasons, as a cart at ONE base, picked at random: only that player can buy.
+   Once in about sixty-seven visits (1.5%) two arrive together, with rare goods on offer. */
 function spawnMerchants(room) {
-  const two = Math.random() < 0.015, last = (room.merchants || []).map((m) => m.name);
+  room.merchants = []; room.merchantFor = null;
+  const live = room.players.filter((p) => !p.done);
+  if (!live.length || Math.random() >= odds('SL_TRADER', 0.25)) return room.merchants;
+  const two = Math.random() < 0.015, last = (room.lastTraders || []);
   const pool = MERCHANT_NAMES.filter((n) => last.indexOf(n) < 0).sort(() => Math.random() - 0.5);
+  room.merchantFor = live[Math.floor(Math.random() * live.length)].slot;
   room.merchants = pool.slice(0, two ? 2 : 1).map((name) => ({ id: 1 + Math.floor(Math.random() * 1e9), name, premium: two, stock: [2, 2, 2, 2, 1, 1] }));
+  room.lastTraders = room.merchants.map((m) => m.name);
   return room.merchants;
 }
 const key = (a, b) => (a < b ? a + '-' + b : b + '-' + a);
@@ -143,7 +151,7 @@ export function handle(room, slot, msg, ctx) {
   if (t === 'buy') {
     const m = (room.merchants || []).find((x) => x.id === num(msg.m, 0, 2e9)), i = num(msg.i, 0, 5);
     if (!m || me.done) return o;
-    if ((i >= 4 && !m.premium) || m.stock[i] <= 0) return [out(slot, { t: 'soldout', m: m.id, i })];
+    if (slot !== room.merchantFor || (i >= 4 && !m.premium) || m.stock[i] <= 0) return [out(slot, { t: 'soldout', m: m.id, i })];
     m.stock[i] -= 1;
     o.push(out(slot, { t: 'bought', m: m.id, i, name: m.name }), feed(room, me.name + ' traded with ' + m.name + '.'), sync(room));
     return o;
@@ -154,10 +162,11 @@ export function handle(room, slot, msg, ctx) {
   }
   if (t === 'dig') {
     const tr = room.treasure;
-    if (!tr || tr.by != null || me.done || num(msg.id, 0, 2e9) !== tr.id) return o;
+    if (!tr || me.done || num(msg.id, 0, 2e9) !== tr.id) return o;
+    if (tr.by != null) return [out(slot, { t: 'toolate' })];
     tr.by = slot;
     const info = TREASURE[tr.kind];
-    o.push(out(slot, { t: 'prize', kind: tr.kind, text: info.text, reward: info.reward }), feed(room, me.name + ' found ' + info.text.toLowerCase() + '!'), sync(room));
+    o.push(out(slot, { t: 'prize', kind: tr.kind, text: info.text, reward: info.reward, drowned: Math.random() < 0.15 }), feed(room, me.name + ' found ' + info.text.toLowerCase() + '!'), sync(room));
     return o;
   }
   if (t === 'egg') {
@@ -212,8 +221,8 @@ export function maybeGo(room) {
   room.offers = [];
   const merchants = spawnMerchants(room);
   const hunt = spawnTreasure(room);
-  const o = [out('all', { t: 'go', season, results, battles: results.battles, merchants: pubMerchants(room), event: event ? { key: event.key, title: event.title, text: event.text } : null })];
-  o.push(feed(room, merchants.length > 1 ? 'Two traders sail in together: ' + merchants[0].name + ' and ' + merchants[1].name + '! They carry rare goods.' : merchants[0].name + ' has docked with goods for sale.'));
+  const o = [out('all', { t: 'go', season, results, battles: results.battles, merchants: pubMerchants(room), merchantFor: room.merchantFor == null ? null : room.merchantFor, event: event ? { key: event.key, title: event.title, text: event.text } : null })];
+  if (merchants.length) { const host = (room.players.find((p) => p.slot === room.merchantFor) || {}).name; o.push(feed(room, merchants.length > 1 ? 'Two merchant carts have driven up to ' + host + "'s base: " + merchants[0].name + ' and ' + merchants[1].name + '! They carry rare goods.' : merchants[0].name + ' has driven a cart up to ' + host + "'s base with goods for sale.")); }
   if (hunt) o.push(feed(room, 'Something has turned up in the river. Be the first to dig it up!'));
   results.lines.forEach((l) => o.push(feed(room, l)));
   if (event) o.push(feed(room, event.title + '. ' + event.text));
@@ -275,16 +284,19 @@ function resolve(room) {
 
 function spawnTreasure(room) {
   room.treasure = null;
-  if (Math.random() < 0.25) return false;
+  if (Math.random() >= odds('SL_TREASURE', 0.075)) return false;   /* 7.5% of seasons */
   const r = Math.random(), kind = r < 0.6 ? 'treasure' : r < 0.85 ? 'idol' : 'monster';
   room.treasure = { id: Math.floor(Math.random() * 1e9), kind, spot: Math.floor(Math.random() * 1000), by: null };
   return true;
 }
 
+const BAD_EVENTS = ['drought', 'plague', 'pirates'];
 function rollEvent(room, results) {
   const live = room.players.filter((p) => !p.done);
-  if (live.length < 2 || Math.random() < 0.3) return null;
-  const e = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+  if (live.length < 2 || Math.random() < 0.45) return null;   /* quieter seasons than before */
+  const weights = EVENTS.map((e) => (BAD_EVENTS.indexOf(e.key) >= 0 ? 0.2 : 1)), total = weights.reduce((x, y) => x + y, 0);
+  let r = Math.random() * total, e = EVENTS[0];
+  for (let i = 0; i < EVENTS.length; i++) { r -= weights[i]; if (r <= 0) { e = EVENTS[i]; break; } }   /* the bad ones are a fifth as likely */
   const pop = (p) => (p.stats ? p.stats.pop : 10);
   let targets = live;
   if (e.scope === 'top') targets = [live.reduce((a, b) => (pop(b) > pop(a) ? b : a))];

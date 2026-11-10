@@ -4103,6 +4103,9 @@ html[data-theme="dark"] #game .hero{ background:linear-gradient(#1C3B57,#27506F 
 #game .watcher-banner span{font-size:1.1rem;color:#ffb3b3}
 #game .watcher-banner.hide{display:none}
 @keyframes wb{from{box-shadow:0 0 24px 4px rgba(255,40,40,.4)}to{box-shadow:0 0 56px 16px rgba(255,40,40,.8)}}
+#game .treasure-banner{position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:345;background:linear-gradient(135deg,#fff3c4,#ffd36b);color:#3a2a08;border:2px solid #b07a12;border-radius:14px;padding:9px 16px;box-shadow:0 8px 28px rgba(0,0,0,.25);display:flex;gap:10px;align-items:center;flex-wrap:wrap;max-width:94vw;font-size:.92rem}
+#game .treasure-banner b{font-size:1rem}
+#game .treasure-banner.hide{display:none}
 </style>
 </head>
 <body>
@@ -4127,7 +4130,7 @@ html[data-theme="dark"] #game .hero{ background:linear-gradient(#1C3B57,#27506F 
     <section class="sl-card board-panel">
       <div class="sl-strip" id="strip" aria-label="What the village has"></div>
       <div class="canvas-zone">
-        <canvas id="village" width="930" height="524" aria-label="Village map"></canvas>
+        <canvas id="village" width="1302" height="700" aria-label="Village map"></canvas>
         <div class="talk" id="talk" aria-live="polite"></div>
         <div class="tip" id="mapTip"></div>
         <div class="map-note" id="canvasMsg" role="status" aria-live="polite"></div>
@@ -4190,10 +4193,37 @@ html[data-theme="dark"] #game .hero{ background:linear-gradient(#1C3B57,#27506F 
   </div>
 
   <div class="modal-back hide" id="merchantModal" style="z-index:416">
-    <div class="modal wide" role="dialog" aria-labelledby="merchantTitle"><h2 id="merchantTitle">The trading boat</h2><div id="merchantBody"></div><div class="btn-row"><button class="btn btn-primary" id="merchantClose" type="button">Close</button></div></div>
+    <div class="modal wide" role="dialog" aria-labelledby="merchantTitle"><h2 id="merchantTitle">The merchant’s cart</h2><div id="merchantBody"></div><div class="btn-row"><button class="btn btn-primary" id="merchantClose" type="button">Close</button></div></div>
   </div>
 
   <div class="watcher-banner hide" id="watcherBanner" role="alert"><b>The Watcher has caught a cheater</b><span id="watcherSub"></span></div>
+
+  <div class="treasure-banner hide" id="treasureBanner" role="alert"><b id="treasureTitle">Treasure in the river!</b><span>Connect the wires first to dig it up. Diving is dangerous: you might drown.</span><button class="btn small btn-primary" id="treasurePlay" type="button">Play now</button></div>
+
+  <div class="modal-back hide" id="wireGame" style="z-index:440">
+    <div class="modal" role="dialog" aria-labelledby="wireTitle"><h2 id="wireTitle">Connect the wires</h2><p class="note" style="margin:0 0 6px">Join each wire to the end with the same colour. The first player to finish digs up the treasure.</p><svg id="wireSvg" viewBox="0 0 360 270" style="width:100%;max-width:400px;display:block;margin:0 auto;background:#16202b;border-radius:12px"></svg><p id="wireMsg" class="note" style="margin:6px 0 0"></p><div class="btn-row"><button class="btn" id="wireCancel" type="button">Give up</button></div></div>
+  </div>
+
+  <div class="modal-back hide" id="adminModal" style="z-index:600">
+    <div class="modal" role="dialog" aria-labelledby="adminTitle"><h2 id="adminTitle">Admin</h2>
+      <div id="adminGate"><p class="note" style="margin:0 0 8px">Type the code.</p><div class="mp-row"><input class="mp-in" id="adminCode" type="password" autocomplete="off" placeholder="Code"><button class="btn btn-primary" id="adminGo" type="button">Open</button></div><p id="adminGateMsg" class="note" style="margin:6px 0 0"></p><div class="btn-row"><button class="btn" id="adminClose" type="button">Close</button></div></div>
+      <div id="adminPanel" class="hide">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <label class="note" style="margin:0">Food<input class="mp-in" id="adminFood" inputmode="text" style="width:100%"></label>
+          <label class="note" style="margin:0">Materials<input class="mp-in" id="adminMaterials" inputmode="text" style="width:100%"></label>
+          <label class="note" style="margin:0">Knowledge<input class="mp-in" id="adminKnowledge" inputmode="text" style="width:100%"></label>
+          <label class="note" style="margin:0">Medicine<input class="mp-in" id="adminMedicine" inputmode="text" style="width:100%"></label>
+          <label class="note" style="margin:0">Goods<input class="mp-in" id="adminGoods" inputmode="text" style="width:100%"></label>
+          <label class="note" style="margin:0">Add settlers<input class="mp-in" id="adminSettlers" inputmode="numeric" style="width:100%"></label>
+          <label class="note" style="margin:0">Satisfaction (0 to 100)<input class="mp-in" id="adminSat" inputmode="numeric" style="width:100%"></label>
+          <label class="note" style="margin:0">Health (0 to 100)<input class="mp-in" id="adminHealth" inputmode="numeric" style="width:100%"></label>
+        </div>
+        <label class="note" style="margin:10px 0 0;display:flex;gap:8px;align-items:center"><input type="checkbox" id="adminStorage" checked> Build stockpiles and granaries (and shelters for new settlers) to hold it</label>
+        <p id="adminMsg" class="note" style="margin:8px 0 0"></p>
+        <div class="btn-row"><button class="btn btn-primary" id="adminApply" type="button">Apply</button><button class="btn" id="adminMax" type="button">Fill in 500k materials and 20m food</button><button class="btn" id="adminClose2" type="button">Close</button></div>
+      </div>
+    </div>
+  </div>
 
   <div class="modal-back hide" id="onReport" style="z-index:430">
     <div class="modal" role="dialog" aria-labelledby="onReportTitle"><h2 id="onReportTitle"></h2><div id="onReportBody"></div><div class="btn-row"><button class="btn btn-primary" id="onReportGo" type="button">Carry on</button></div></div>
@@ -44030,7 +44060,7 @@ const cv=document.getElementById('village');
 const ctx=cv.getContext('2d');
 /* A 45 DEGREE VIEW: a tile is 62 wide and 44 deep on screen (62 × cos 45°), and anything standing
    on it is drawn upright. The 40px band at the top is room for the back row's trees and roofs. */
-const GRID={cols:15,rows:11,tile:62,depth:44,ox:0,oy:40};
+const GRID={cols:21,rows:15,tile:62,depth:44,ox:0,oy:40,slot:0};
 const ROAD=5;
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const SEP='<span class="sep"></span>';
@@ -44183,6 +44213,7 @@ const BUILDINGS={
   stables:{name:'Stables',cost:{materials:22},build:18,color:'#c79a66',unlock:4,size:[2,1],online:true,desc:'Needed to recruit horsemen. Online games only.'},
   stonewall:{name:'Stone wall',cost:{materials:10},build:10,color:'#a5a5ad',unlock:4,online:true,desc:'Adds 4 to your defence (up to eight walls count). Online games only.'},
   workshop:{name:'Siege workshop',cost:{materials:28},build:20,color:'#7a5c3e',unlock:5,size:[2,1],online:true,desc:'Needed to build catapults. Online games only.'},
+  clearcrew:{name:'Clearing crew',cost:{materials:100},build:14,color:'#b5651d',unlock:1,desc:'Axes and pickaxes. When the crew has finished, every tree and rock within 3 tiles is cleared and sold: 2 materials a tree, 3 a rock.'},
   shipyard:{name:'Shipyard',cost:{materials:26},build:20,color:'#3b6e8f',unlock:4,size:[2,1],online:true,desc:'Builds warships (each shipyard holds 4). A fleet rules the river, and one warship is enough to cross it. Online games only.'},
   foundry:{name:'Foundry',cost:{materials:30},build:20,color:'#4a4a52',unlock:5,size:[2,1],online:true,desc:'Needed to cast cannons. Online games only.'},
   fortress:{name:'Fortress',cost:{materials:60},build:28,color:'#8b8b93',unlock:5,size:[2,2],online:true,desc:'A great stone fort: +10 defence (up to three count). Online games only.'},
@@ -44273,10 +44304,10 @@ function makeTerrainOnce(){
   const set=(x,y,v)=>{if(x>=0&&y>=0&&x<C&&y<R)t[y*C+x]=v;};
   /* one river; a third of the time it forks below (Matt, 2026-10-02) */
   const river=(x0,lo,hi,widen)=>{let x=x0;for(let y=0;y<R;y++){const nx=y?clamp(x+ri(-1,1),lo,hi):x;for(let k=Math.min(x,nx);k<=Math.max(x,nx);k++)set(k,y,'water');if(Math.random()<widen)set(nx+1,y,'water');x=nx;}};
-  if(!GRID.online){const rx=ri(7,8);river(rx,rx-1,rx+1,.3);}
+  if(!GRID.online){const rc=Math.round(C/2),rx=ri(rc-1,rc);river(rx,rx-1,rx+1,.3);}
   /* the road: steps only where neither column touches the river, never twice running */
   const wet=x=>{for(let y=0;y<R;y++)if(t[y*C+x]==='water')return true;return false;},rr=[],road=new Set();
-  const rm=GRID.online?Math.floor(R/2):5;let r0=ri(rm-1,rm+1);
+  const rm=Math.floor(R/2);let r0=ri(rm-1,rm+1);
   for(let x=0;x<C;x++){
     if(x>0&&!wet(x)&&!wet(x-1)&&!(x>1&&rr[x-1]!==rr[x-2])&&Math.random()<.45)r0=clamp(r0+(Math.random()<.5?-1:1),rm-1,rm+1);
     rr.push(r0);road.add(r0*C+x);
@@ -44289,11 +44320,11 @@ function makeTerrainOnce(){
   t.branch=[];
   if(!GRID.online&&Math.random()<1/3){
     const farN=()=>{let n=0;for(let y=0;y<R;y++)for(let x=0;x<C;x++)if(t[y*C+x]!=='water'&&x>edge(y))n++;return n;};
-    const edge=y=>{let m=0;for(let x=0;x<C;x++)if(t[y*C+x]==='water'&&x<11)m=x;return m;};
+    const edge=y=>{let m=0;for(let x=0;x<C;x++)if(t[y*C+x]==='water'&&x<Math.round(C*.73))m=x;return m;};
     const total=farN(),top=Math.random()<.5,saved=t.slice();
     for(let tries=0;tries<40;tries++){
       for(let i=0;i<t.length;i++)t[i]=saved[i];
-      const lo=top?1:7,hi=top?3:9,cells=[];let y=top?ri(2,3):ri(7,8);
+      const lo=top?1:R-4,hi=top?3:R-2,cells=[];let y=top?ri(2,3):ri(R-4,R-3);
       for(let x=edge(y)+1;x<C;x++){
         const ny=clamp(y+(Math.random()<.45?ri(-1,1):0),lo,hi);
         for(let k=Math.min(y,ny);k<=Math.max(y,ny);k++){if(t[k*C+x]!=='water'){t[k*C+x]='water';cells.push([x,k]);}}
@@ -44310,13 +44341,20 @@ function makeTerrainOnce(){
     }
   }
   const free=(gx,gy)=>t[gy*C+gx]==='grass'&&!road.has(gy*C+gx);
-  for(let c=0,n=GRID.online?ri(9,12):ri(3,4);c<n;c++){
-    const cx=GRID.online?ri(0,C-1):(c===0?ri(11,13):ri(0,6)),cy=ri(0,R-1);
-    for(let i=0,sz=ri(5,8);i<sz;i++){const gx=clamp(cx+ri(-2,2),0,C-1),gy=clamp(cy+ri(-2,2),0,R-1);if(free(gx,gy))t[gy*C+gx]='tree';}
+  for(let c=0,n=GRID.online?ri(4,6):Math.max(3,Math.round(ri(3,4)*C*R/165));c<n;c++){
+    const cx=GRID.online?ri(0,C-1):(c%3===0?ri(C-4,C-2):ri(0,Math.round(C*.4))),cy=ri(0,R-1);
+    for(let i=0,sz=GRID.online?ri(3,5):ri(5,8);i<sz;i++){const gx=clamp(cx+ri(-2,2),0,C-1),gy=clamp(cy+ri(-2,2),0,R-1);if(free(gx,gy))t[gy*C+gx]='tree';}
   }
-  for(let c=0,n=GRID.online?ri(5,7):ri(2,3);c<n;c++){
-    const cx=GRID.online?ri(1,C-2):ri(1,12),cy=ri(0,R-1);
+  for(let c=0,n=GRID.online?ri(4,6):Math.max(2,Math.round(ri(2,3)*C*R/165));c<n;c++){
+    const cx=GRID.online?ri(1,C-2):ri(1,C-3),cy=ri(0,R-1);
     for(let i=0,sz=ri(2,4);i<sz;i++){const gx=clamp(cx+ri(-1,1),0,C-1),gy=clamp(cy+ri(-1,1),0,R-1);if(free(gx,gy))t[gy*C+gx]='rock';}
+  }
+  if(GRID.online){
+    const sl=GRID.slot||0,east=sl%2===0,south=sl<2,wet2=(x,y)=>{if(x<0||y<0||x>=C||y>=R||road.has(y*C+x))return;t[y*C+x]='water';};
+    for(let k=0;k<2;k++){
+      for(let y=0;y<R;y++)wet2(east?C-1-k:k,y);
+      for(let x=0;x<C;x++)wet2(x,south?R-1-k:k);
+    }
   }
   return t;
 }
@@ -44527,7 +44565,7 @@ function resetGame(){
      outside: without them nobody had a bed until month 3 and even a sound plan lost a third of the
      village (measured 2026-10-01). */
   let made=0;
-  for(const gy of (GRID.online?[-1,1,-2,2,-3,3,-4,4,-5,5].map(d=>Math.floor(GRID.rows/2)+d):[4,6,3,7]))for(let gx=1;gx<(GRID.online?13:9)&&made<2;gx++)if(tileFree(gx,gy)&&tileFree(gx+1,gy)){state.buildings.push({id:state.nextId++,type:'shelter',gx,gy,progress:1,start:true});made++;gx++;}
+  for(const gy of [-1,1,-2,2,-3,3,-4,4,-5,5].map(d=>Math.floor(GRID.rows/2)+d))for(let gx=1;gx<(GRID.online?13:Math.round(GRID.cols*.6))&&made<2;gx++)if(tileFree(gx,gy)&&tileFree(gx+1,gy)){state.buildings.push({id:state.nextId++,type:'shelter',gx,gy,progress:1,start:true});made++;gx++;}
   mapChanged();
   state.baselineStats=collectBaselineStats();
   addLog('Twenty settlers arrive at the river flat with two shelters, beds for 16. The leader opens the first ledger.');
@@ -44640,7 +44678,7 @@ function renderMetrics(){
     health:'<path d="M8 13.5S2 10 2 6a3 3 0 0 1 6-1 3 3 0 0 1 6 1c0 4-6 7.5-6 7.5z"/>',
     sat:'<circle cx="8" cy="8" r="6"/><path d="M5.6 9.6c.6.9 1.4 1.3 2.4 1.3s1.8-.4 2.4-1.3"/><path d="M6 6.4v.2M10 6.4v.2"/>',
     goods:'<path d="M2 6l6-3 6 3v6l-6 3-6-3z"/><path d="M2 6l6 3 6-3M8 9v6"/>'};
-  const st=(k,icon,v,extra='',cls='')=>`<span class="st ${cls}" title="${esc(extra?k+'. '+extra:k)}" aria-label="${esc(k)} ${v}"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true">${IC[icon]}</svg><span class="sk">${k}</span><b>${v}</b></span>`;
+  const st=(k,icon,v,extra='',cls='')=>`<span class="st ${cls}" title="${esc(extra?k+'. '+extra:k)}" aria-label="${esc(k)} ${v}"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true">${IC[icon]}</svg><span class="sk">${k}</span><b>${typeof v==='number'&&v>=100000?fmtNum(v):v}</b></span>`;
   const items=[
     st('Settlers','settlers',pop,'The number of people living here. The village is judged on it at the end.','lead'),
     /* beds beside the settlers, so the two can be compared at a glance (Matt, 2026-10-06) */
@@ -44746,6 +44784,7 @@ function renderPlan(){
   const lb=state.lastBuilt;
   const buildPanel=`<div class="subpanel build-panel"><div class="subhead"><h3>Build</h3><span class="gtag">${Math.floor(state.resources.materials)} materials</span></div><div class="subbody">
     <div class="palette">${palette}</div>
+    ${(state.selectedBuild==='palisade'||state.selectedBuild==='stonewall')?'<button class="btn small" id="wallShoreBtn" type="button" title="Plan a run of this along every free bit of shore, leaving the road open as a gate">Wall the whole shoreline</button>':''}
     ${lb?'':`<p class="note plan-note">Pick a building, then click open grass.</p>`}
   </div></div>`;
   const trainPanel=`<div class="subpanel"><div class="subhead"><h3>Jobs</h3><span class="gtag info">${unassigned} unassigned</span></div><div class="subbody">
@@ -44885,6 +44924,7 @@ function bindPlanControls(){
   el('planBody').querySelectorAll('[data-pdone]').forEach(b=>b.addEventListener('click',()=>{const pd=state.planDone||(state.planDone={});pd[b.dataset.pdone]=true;
     state.planTab='jobs';renderPlan();}));
   el('demolishBtn')?.addEventListener('click',demolishSelected);
+  el('wallShoreBtn')?.addEventListener('click',wallShoreline);
   el('runBtn')?.addEventListener('click',startYear);
   el('planBody').querySelectorAll('[data-inc]').forEach(b=>b.addEventListener('click',()=>changeAlloc(b.dataset.inc,1)));
   el('planBody').querySelectorAll('[data-dec]').forEach(b=>b.addEventListener('click',()=>changeAlloc(b.dataset.dec,-1)));
@@ -46234,7 +46274,7 @@ function simMonth(){
   if(state.resources.goods>=8&&state.resources.medicine<8){state.resources.goods-=8;state.resources.medicine+=7;addLog('Traders exchanged goods for medicine.','good');}
   /* FOOD SPOILS from Season 2: the first SPOIL[0] keep, each granary keeps 80 more, and SPOIL[1] of the rest goes bad each month */
   let spoiled=0;
-  if(state.year>=2){const safe=SPOIL[0]+placedPower('granary')*80,extra=state.resources.food-safe;if(extra>0){spoiled=Math.ceil(extra*SPOIL[1]*(pol('smoke')?.5:1));state.resources.food-=spoiled;sim.spoiled=(sim.spoiled||0)+spoiled;sim.lost.spoil[sim.month-1]+=spoiled;}}
+  if(state.year>=2){const safe=SPOIL[0]+placedPower('granary')*80+(state.adminSafe||0),extra=state.resources.food-safe;if(extra>0){spoiled=Math.ceil(extra*SPOIL[1]*(pol('smoke')?.5:1));state.resources.food-=spoiled;sim.spoiled=(sim.spoiled||0)+spoiled;sim.lost.spoil[sim.month-1]+=spoiled;}}
   /* NEWCOMERS ARRIVE THROUGH THE SEASON, not all at once at its end: in any month a family may come
      when there is a spare bed, the stores are not empty and the village looks satisfied and healthy.
      Most arrive with no trade, so there is always someone to train. Scouts and good
@@ -47779,7 +47819,7 @@ function drawRock(x,y,s){
    flower, columns and an open book on the institute, a field with a scarecrow, a red cross on the clinic,
    a timber tower with its ladder and flag, striped market stalls. A planned building is drawn faded and
    dashed, with its progress bar; each keeps a small name tag. */
-const BH={shipyard:34,foundry:44,fortress:58,factory:50,barracks:36,palisade:26,tavern:34,forge:26,harbour:20,stables:30,stonewall:22,workshop:30,monument:60,leaderhouse:30,granary:26,shelter:26,firepit:8,well:22,stockpile:16,garden:6,institute:30,farm:4,clinic:26,watchtower:50,market:22};
+const BH={clearcrew:34,shipyard:34,foundry:44,fortress:58,factory:50,barracks:36,palisade:26,tavern:34,forge:26,harbour:20,stables:30,stonewall:22,workshop:30,monument:60,leaderhouse:30,granary:26,shelter:26,firepit:8,well:22,stockpile:16,garden:6,institute:30,farm:4,clinic:26,watchtower:50,market:22};
 const BO='#2B2018';
 function bPath(fill,stroke=true){if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=BO;ctx.stroke();}}
 function bRect(x,y,w,h,fill,r=1.5){ctx.beginPath();ctx.roundRect(x,y,w,h,r);bPath(fill);}
@@ -47868,6 +47908,7 @@ function drawBuildingArt(b,x0,y0,x1,y1){
   else if(t==='stables'){bHouse(cx,by,w*.82,30,'#C79A66','#6E3B1F',{window:false});bRect(cx-9,by-14,18,14,'#4a2a14',1);}
   else if(t==='stonewall'){bRect(x0,by-22,w,22,'#A5A5AD');for(let k=0;k<3;k++)bRect(x0+2+k*(w-4)/3,by-30,(w-4)/3-3,8,'#A5A5AD',1);}
   else if(t==='workshop'){bHouse(cx,by,w*.7,30,'#C9B79C','#5E4B34',{window:false});bLine(x1-16,by,x1-6,by-40,'#7A4A26',3);bLine(x1-24,by-30,x1+2,by-34,'#5B3B20',2);bCirc(x1-24,by-30,4,'#8B8B93');}
+  else if(t==='clearcrew'){bHouse(cx,by,w*.7,28,'#E1C79A','#8A5A2B',{window:false});bLine(x1-18,by,x1-8,by-36,'#6B4423',3);bTri(x1-20,by-36,x1-2,by-30,x1-12,by-24,'#9CA3AF');bLine(x0+10,by,x0+22,by-30,'#6B4423',3);bRect(x0+16,by-34,14,6,'#9CA3AF',1);}
   else if(t==='shipyard'){bRect(x0,by-6,w,6,'#8A5F38',1);bHouse(cx-4,by-6,w*.6,26,'#B9C7D3','#3B6E8F',{window:false});bTri(x1-22,by-8,x1-2,by-8,x1-12,by-34,'#FBF7F0');bLine(x1-12,by-8,x1-12,by-38,'#5B3B20',1.6);}
   else if(t==='foundry'){bRect(x0+4,by-22,w-8,22,'#6A6A72');bRect(x0+10,by-44,10,24,'#4A4A52',1);bRect(x1-22,by-40,10,20,'#4A4A52',1);bCirc(cx,by-9,6,'#F08A24');}
   else if(t==='fortress'){bRect(x0+4,by-30,w-8,30,'#9A9AA2');for(let k=0;k<4;k++)bRect(x0+6+k*(w-12)/4,by-40,(w-12)/4-4,10,'#9A9AA2',1);bRect(cx-9,by-18,18,18,'#3A2A1E',1);bLine(cx,by-40,cx,by-58);bTri(cx,by-58,cx+12,by-53,cx,by-48,'#C8323C');}
@@ -47982,6 +48023,7 @@ function draw(){
   }
   state.buildings.filter(b=>b.type!=='bridge').forEach(b=>items.push({y:tileY(b.gy+sizeOf(b)[1])-4,f:()=>drawBuilding(b)}));
   state.walkers.forEach(w=>{stepWalker(w);items.push({y:w.y,f:()=>drawWalker(w,time)});});
+  if(typeof onCartItem==='function'&&ON.on&&ON.started){const ci=onCartItem(ON.slot);if(ci)items.push(ci);}
   items.sort((a,b)=>a.y-b.y).forEach(it=>it.f());
   drawSimHud();
   updateTalk();
@@ -48048,6 +48090,7 @@ cv.addEventListener('click',e=>{
   if(!def||!canAfford(def.cost)){setMsg(`Not enough materials for ${def?'a '+def.name.toLowerCase():'that'} yet.`);return;}
   const plot=plotFor(type,gx,gy);
   if(!plot){setMsg(`A ${def.name.toLowerCase()} needs a ${def.size[0]} by ${def.size[1]} patch of open grass. Try somewhere roomier.`);return;}
+  if((type==='harbour'||type==='shipyard')&&!nearWaterPlot(plot)){setMsg(`A ${def.name.toLowerCase()} has to be built right beside the water.`);return;}
   pay(def.cost);
   const b={id:state.nextId++,type,gx:plot.gx,gy:plot.gy,progress:.1};
   state.buildings.push(b);state.selectedPlaced=b.id;mapChanged();
@@ -48100,7 +48143,7 @@ function recSave(any){
 }
 function recSaved(){
   if(!recOn())return null;
-  try{const all=Store.getGameProgress('ledger',SL_USER.id)||{},p=all[recKey()];return p&&p.state&&Store.gameAttempt(p.attemptId)&&!Store.gameAttempt(p.attemptId).finishedAt?p:null;}catch(e){return null;}
+  try{const all=Store.getGameProgress('ledger',SL_USER.id)||{},p=all[recKey()];return p&&p.state&&(p.state.terrain||[]).length===GRID.cols*GRID.rows&&Store.gameAttempt(p.attemptId)&&!Store.gameAttempt(p.attemptId).finishedAt?p:null;}catch(e){return null;}
 }
 function recResume(p){
   for(const k of Object.keys(state))delete state[k];
@@ -48667,7 +48710,7 @@ function onArmy() {
   ON_UNITS.forEach(u => { const c = A[u.k] || 0; if (u.grp === 'sea') sea += c; else land += c; eat += c * u.eat; att += c * u.atk; def += c * u.def; });
   const sol = roleCounts().soldier || 0;
   att = (att + sol) * (1 + 0.15 * Math.min(3, cnt('forge'))) + (state.boostAtk || 0);
-  def = def + sol * 1.1 + cnt('palisade') * 1.5 + Math.min(8, cnt('stonewall')) * 4 + cnt('watchtower') * 3 + Math.min(3, cnt('fortress')) * 10 + (state.ward || 0);
+  def = def + sol * 1.1 + Math.min(12, cnt('palisade')) * 1.5 + Math.min(8, cnt('stonewall')) * 4 + cnt('watchtower') * 3 + Math.min(3, cnt('fortress')) * 10 + (state.ward || 0);
   return { att: Math.round(att * 10) / 10, def: Math.round(def * 10) / 10, units: land + sea, land, sea, eat, landCap: cnt('barracks') * 6, seaCap: cnt('shipyard') * 4, cap: cnt('barracks') * 6 + cnt('shipyard') * 4,
     boats: cnt('harbour') + (A.warship > 0 ? 1 : 0), ships: A.warship || 0, tanks: A.tank || 0, cannons: A.cannon || 0, wonder: cnt('monument'), cnt };
 }
@@ -48719,7 +48762,7 @@ function onMsg(m) {
   if (m.t === 'players') {
     const had = ON.room;
     ON.room = m.room; if (m.you != null) { ON.slot = m.you; ON.host = m.you === 0; }
-    if (!ON.started) onLobbyDraw(); else { onNewWars(had); onWaitDraw(); onWorldDraw(); onHudDraw(); }
+    if (!ON.started) onLobbyDraw(); else { onNewWars(had); onWaitDraw(); onWorldDraw(); onHudDraw(); onTreasureBanner(); }
     return;
   }
   if (m.t === 'start') { ON.room = m.room; ON.slot = m.you; ON.host = m.you === 0; ON.mode = m.room.mode; onBegin(m.base); return; }
@@ -48733,7 +48776,12 @@ function onMsg(m) {
   if (m.t === 'prize') {
     const R = state.resources; Object.keys(m.reward).forEach(k => { if (k === 'sat') state.people.forEach(p => { if (p.alive && !p.isLeader) p.sat = clamp(p.sat + m.reward[k], 0, 100); }); else R[k] = (R[k] || 0) + m.reward[k]; });
     const txt = `You dug up ${m.text.toLowerCase()}: ${Object.keys(m.reward).map(k => m.reward[k] + ' ' + (k === 'sat' ? 'satisfaction' : k)).join(', ')}.`;
-    addLog(txt, 'good'); setMsg(txt); ON.eggs.push({ k: 'party', t0: performance.now() }); renderAll(); return;
+    addLog(txt, 'good'); setMsg(txt); ON.eggs.push({ k: 'party', t0: performance.now() });
+    if (m.drowned) {   /* diving for it is dangerous */
+      const pool = state.people.filter(p => p.alive && !p.isLeader);
+      if (pool.length > 3) { pool[Math.floor(Math.random() * pool.length)].alive = false; syncWalkers(); addLog('A diver drowned bringing it up.', 'bad'); setMsg(txt + ' But a diver drowned.'); }
+    }
+    renderAll(); return;
   }
   if (m.t === 'bought') {
     const q = (ON.buying || []).findIndex(b => b.id === m.m && b.i === m.i); if (q >= 0) ON.buying.splice(q, 1);
@@ -48747,6 +48795,7 @@ function onMsg(m) {
     return;
   }
   if (m.t === 'caught') { onWatcherCatch(m.slot, m.name); return; }
+  if (m.t === 'toolate') { setMsg('Too slow! Someone connected their wires first.'); return; }
   if (m.t === 'egg') { ON.eggs.push({ k: m.k, t0: performance.now(), name: m.name }); ON.feed.push(`${m.name} summoned ${({ dragon: 'a dragon', ducks: 'the ducks', party: 'a party', nessie: 'Nessie', tank: 'a tank parade', armada: 'an armada' })[m.k]}!`); ON.unseen++; onHudDraw(); onWorldDraw(); return; }
   if (m.t === 'board') { ON.room = m.room; onBoard(); return; }
 }
@@ -48761,7 +48810,8 @@ function onNewWars(had) {
 
 /* ---------- starting the game ---------- */
 function onSetGrid(online) {   /* online islands are a finer grid, so more fits; solo is the usual 15 by 11 with its river */
-  GRID.online = !!online; GRID.cols = online ? ON_COLS : 15; GRID.rows = online ? ON_ROWS : 11;
+  GRID.online = !!online; GRID.cols = online ? ON_COLS : SOLO_COLS; GRID.rows = online ? ON_ROWS : SOLO_ROWS;
+  ODDS.disaster = online ? .06 : ODDS_BASE.disaster; ODDS.monthEvent = online ? .30 : ODDS_BASE.monthEvent;   /* fewer bad events in a shared world */
   cv.width = GRID.cols * GRID.tile; cv.height = GRID.oy + GRID.rows * GRID.depth; scheduleCanvasResize();
 }
 function onLoadBase(sn) {
@@ -48776,12 +48826,12 @@ function onLoadBase(sn) {
 function onBegin(base) {
   ['splash', 'finalOverlay', 'mpBoard', 'mpPass', 'stopBox'].forEach(id => el(id).classList.add('hide'));
   MP.on = false; ON.started = true; ON.finished = false; ON.wait = false; ON.attack = null; ON.feed = []; ON.unseen = 0;
-  onSetGrid(true); state.short = ON.mode === '3'; state.endless = ON.mode === 'E'; resetGame();   /* each player gets their own island, made fresh the way the game always does it */
+  GRID.slot = ON.slot; onSetGrid(true); state.short = ON.mode === '3'; state.endless = ON.mode === 'E'; resetGame();   /* each player gets their own island, made fresh the way the game always does it */
   el('onSetup').classList.add('hide');
   let done = false; try { done = localStorage.getItem(TUT_KEY) === '1'; } catch (e) {}
   if (!done) tutStart(0);
   onSetNewIn(true); state.army = state.army || {}; ON.cam = null; ON.focus = null; NOQ = false;   /* nobody starts an online game with the questions already off */
-  ON.bd = {}; onGeom.c = null;
+  ON.bd = {}; onGeom.c = null; ON.cartT0 = (ON.room && ON.room.merchantFor === ON.slot) ? performance.now() : 0;
   clearInterval(ON.live); ON.live = setInterval(() => { if (ON.on && ON.started && !ON.finished) onSend({ t: 'stats', stats: onStats() }); }, 1300);   /* the picture of your island, kept live for everyone */
   onHudDraw(); onlineStats();
   setMsg(`You are ${ON.room.players[ON.slot].name}, on the ${['red', 'blue', 'green', 'gold'][ON.slot]} island.`);
@@ -48900,7 +48950,7 @@ function onGo(m) {
   }
   if (r) { onApply(r); lines = (r.lines || []).slice(); lines.forEach(l => addLog(l, /lost|raided|failed|Plague|Dry|pirates|Pirates/.test(l) ? 'bad' : 'good')); }
   if (ON.spent) { state.ward = Math.max(0, (state.ward || 0) - ON.spent.ward); state.boostAtk = Math.max(0, (state.boostAtk || 0) - ON.spent.atk); ON.spent = null; }   /* bought boosts last for one raid */
-  if (m.merchants) { ON.room.merchants = m.merchants; const mm = m.merchants; if (mm.length) lines.push(mm.length > 1 ? `Two traders sail in together: ${mm[0].name} the ${MERCH[mm[0].name].job} and ${mm[1].name} the ${MERCH[mm[1].name].job}. They carry rare goods! Find them on the world map.` : `${mm[0].name} the ${MERCH[mm[0].name].job} has docked. Find the boat on the world map.`); }
+  if (m.merchants) { ON.room.merchants = m.merchants; ON.room.merchantFor = m.merchantFor; const mm = m.merchants; if (mm.length && m.merchantFor === ON.slot) { ON.cartT0 = performance.now(); lines.push(mm.length > 1 ? `Two merchant carts have driven up to your base: ${mm[0].name} the ${MERCH[mm[0].name].job} and ${mm[1].name} the ${MERCH[mm[1].name].job}. They carry rare goods! Click a cart to trade.` : `${mm[0].name} the ${MERCH[mm[0].name].job} has driven a cart up to your base. Click the cart to trade.`); } }
   if (m.event && !lines.some(l => l.indexOf(m.event.title) === 0)) lines.push(`${m.event.title}: ${m.event.text}`);
   if (!m.late) lines.push(...onPassive());
   ON.go = true; try { startYear(); } finally { ON.go = false; }
@@ -48937,6 +48987,220 @@ function onWaitDraw(text) {
 el('onWait').addEventListener('click', (e) => { const a = e.target.dataset.act; if (a === 'skip') onSend({ t: 'skip' }); if (a === 'world') onWorld(); });
 
 /* ---------- the shared map: one world, an island each, the river between ---------- */
+/* ---------- treasure: the first to connect the wires digs it up ---------- */
+const SOLO_COLS = 21, SOLO_ROWS = 15;   /* the solo map: a fair bit bigger than it was */
+const ODDS_BASE = { disaster: ODDS.disaster, monthEvent: ODDS.monthEvent };
+const WIRE_COLORS = ['#e4572e', '#2e6a9c', '#f4c542', '#2e7d5b'], WIRE_NAMES = ['red', 'blue', 'yellow', 'green'];
+const TREASURE_NAMES = { treasure: 'A buried chest', idol: 'A golden idol', monster: 'The river monster' };
+function onTreasureBanner() {   /* across the top of everyone's screen while something is in the river */
+  const R = ON.room, b = el('treasureBanner'); if (!b) return;
+  const t = R && R.treasure;
+  if (!t || ON.finished || !ON.started) { b.classList.add('hide'); if (ON.wire && (!t || t.id !== ON.wire.id)) onWireClose(true); return; }
+  el('treasureTitle').textContent = `${TREASURE_NAMES[t.kind] || 'Treasure'} is in the river!`;
+  if (ON.seenTreasure !== t.id) { ON.seenTreasure = t.id; setMsg('Treasure in the river! Connect the wires first.'); }
+  b.classList.remove('hide');
+}
+function onWireOpen() {
+  const R = ON.room, t = R && R.treasure; if (!t || ON.finished) return;
+  if (ON.wire && ON.wire.id === t.id) { el('wireGame').classList.remove('hide'); return; }
+  ON.wire = { id: t.id, right: [0, 1, 2, 3].sort(() => Math.random() - .5), linked: {}, sel: null };
+  el('wireMsg').textContent = 'Tap one end, then the end with the same colour.';
+  onWireDraw(); el('wireGame').classList.remove('hide');
+}
+function onWireDraw() {
+  const w = ON.wire; if (!w) return; const Y = [45, 105, 165, 225]; let s = '';
+  Object.keys(w.linked).forEach(li => { const rj = w.linked[li]; s += `<path d="M62 ${Y[li]} C 150 ${Y[li]}, 210 ${Y[rj]}, 298 ${Y[rj]}" stroke="${WIRE_COLORS[li]}" stroke-width="9" fill="none" stroke-linecap="round"/>`; });
+  for (let i = 0; i < 4; i++) {
+    const doneL = w.linked[i] != null, selL = w.sel && w.sel.side === 'L' && w.sel.i === i;
+    s += `<g data-side="L" data-i="${i}" style="cursor:pointer"><circle cx="48" cy="${Y[i]}" r="${selL ? 19 : 15}" fill="${WIRE_COLORS[i]}" stroke="#1d2733" stroke-width="3" opacity="${doneL ? .55 : 1}"/><circle cx="48" cy="${Y[i]}" r="5" fill="#fff" opacity=".85"/></g>`;
+    const col = w.right[i], doneR = Object.values(w.linked).indexOf(i) >= 0, selR = w.sel && w.sel.side === 'R' && w.sel.i === i;
+    s += `<g data-side="R" data-i="${i}" style="cursor:pointer"><circle cx="312" cy="${Y[i]}" r="${selR ? 19 : 15}" fill="${WIRE_COLORS[col]}" stroke="#1d2733" stroke-width="3" opacity="${doneR ? .55 : 1}"/><circle cx="312" cy="${Y[i]}" r="5" fill="#fff" opacity=".85"/></g>`;
+  }
+  el('wireSvg').innerHTML = s;
+}
+function onWireClose(auto) {
+  el('wireGame').classList.add('hide');
+  if (ON.wire && auto) setMsg('Someone else got there first.');
+  ON.wire = null;
+}
+el('wireSvg').addEventListener('click', (e) => {
+  const g = e.target.closest('[data-side]'), w = ON.wire; if (!g || !w) return;
+  const side = g.dataset.side, i = Number(g.dataset.i);
+  if (side === 'L' && w.linked[i] != null) return; if (side === 'R' && Object.values(w.linked).indexOf(i) >= 0) return;
+  if (!w.sel || w.sel.side === side) { w.sel = { side, i }; onWireDraw(); return; }
+  const li = side === 'L' ? i : w.sel.i, rj = side === 'R' ? i : w.sel.i;
+  w.sel = null;
+  if (w.right[rj] === li) { w.linked[li] = rj; onWireDraw(); el('wireMsg').textContent = `${WIRE_NAMES[li][0].toUpperCase()}${WIRE_NAMES[li].slice(1)} wire connected.`; if (Object.keys(w.linked).length === 4) { const id = w.id; onSend({ t: 'dig', id }); el('wireMsg').textContent = 'All connected! Diving…'; setTimeout(() => { if (ON.wire && ON.wire.id === id) { el('wireGame').classList.add('hide'); ON.wire = null; } }, 700); } }
+  else { el('wireMsg').textContent = 'Those colours do not match. Try again.'; onWireDraw(); }
+});
+el('wireCancel').addEventListener('click', () => onWireClose(false));
+el('treasurePlay').addEventListener('click', onWireOpen);
+function nearWaterPlot(p) { const w = p.w || 1, h = p.h || 1; for (let x = p.gx - 1; x <= p.gx + w; x++) for (let y = p.gy - 1; y <= p.gy + h; y++) if (isWater(x, y)) return true; return false; }
+function wallShoreline() {   /* palisades or stone wall along every free bit of shore, the road left open as a gate */
+  const type = state.selectedBuild; if (type !== 'palisade' && type !== 'stonewall') return;
+  const def = BUILDINGS[type], cand = [];
+  for (let gy = 0; gy < GRID.rows; gy++) for (let gx = 0; gx < GRID.cols; gx++)
+    if (tileFree(gx, gy) && inPlanReach(gx, gy) && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => isWater(gx + dx, gy + dy))) cand.push([gx, gy]);
+  cand.sort((a, b) => Math.abs(a[1] - roadRow(a[0])) - Math.abs(b[1] - roadRow(b[0])));
+  const afford = Math.floor((state.resources.materials || 0) / def.cost.materials); let n = 0;
+  for (const [gx, gy] of cand) { if (n >= afford || n >= 70) break; if (!tileFree(gx, gy)) continue; pay(def.cost); state.buildings.push({ id: state.nextId++, type, gx, gy, progress: .1 }); n++; }
+  if (!n) { setMsg(cand.length ? `Not enough materials: each ${def.name.toLowerCase()} costs ${costText(def.cost)}.` : 'There is no free shore to wall.'); return; }
+  mapChanged(); addLog(`${n} ${def.name.toLowerCase()} section${n === 1 ? '' : 's'} planned along the shore.`); state.lastBuilt = { name: def.name, cost: costText(def.cost) }; renderAll();
+}
+function clearCrewTick() {   /* a finished clearing crew cuts the forest and breaks the rock around it, and sells what it gets */
+  let changed = false;
+  state.buildings.forEach(b => {
+    if (b.type !== 'clearcrew' || b.progress < 1 || b.cleared) return; b.cleared = true;
+    let trees = 0, rocks = 0;
+    for (let x = b.gx - 3; x <= b.gx + 3; x++) for (let y = b.gy - 3; y <= b.gy + 3; y++) {
+      if (!inGrid(x, y) || isRoad(x, y)) continue; const t = terrainAt(x, y);
+      if (t === 'tree') { state.terrain[y * GRID.cols + x] = 'grass'; trees++; } else if (t === 'rock') { state.terrain[y * GRID.cols + x] = 'grass'; rocks++; }
+    }
+    const got = trees * 2 + rocks * 3; state.resources.materials += got; changed = true;
+    addLog(`The clearing crew cut down ${trees} tree${trees === 1 ? '' : 's'} and broke ${rocks} rock${rocks === 1 ? '' : 's'}, and sold the timber and stone for ${got} materials.`, 'good');
+  });
+  if (changed) mapChanged();
+}
+{ const sm = simMonth; simMonth = function () { sm(); clearCrewTick(); }; }
+
+/* ---------- the merchant's cart: it drives up the road and parks at the one base it is visiting ---------- */
+function onCartSprite(g, x, y, t, premium, moving, label, sub) {
+  const roll = moving ? x / 11 : 0, swing = moving ? Math.sin(t * 9) * 5 : 0, cloth = premium ? '#E0A33E' : '#c8323c', cloth2 = premium ? '#fff1c4' : '#ffffff';
+  g.save(); g.translate(x, y); g.lineJoin = 'round'; g.lineCap = 'round';
+  g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.ellipse(14, 6, 62, 8, 0, 0, 7); g.fill();
+  /* the horse */
+  g.strokeStyle = '#3a2411'; g.lineWidth = 3.2;
+  [[44, 0], [50, 1], [64, 0], [70, 1]].forEach(([lx, k]) => { g.beginPath(); g.moveTo(lx, -17); g.lineTo(lx + (k ? swing : -swing), 0); g.stroke(); });
+  g.fillStyle = '#9c6b3a'; g.strokeStyle = '#3a2411'; g.lineWidth = 1.6; g.beginPath(); g.ellipse(57, -21, 21, 10, 0, 0, 7); g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(72, -26); g.lineTo(80, -39); g.lineTo(90, -37); g.lineTo(89, -30); g.lineTo(77, -19); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = '#5a3b1f'; g.beginPath(); g.moveTo(74, -28); g.lineTo(78, -45); g.lineTo(80, -37); g.closePath(); g.fill();   /* ear and mane */
+  g.beginPath(); g.moveTo(38, -24); g.quadraticCurveTo(28, -22, 31, -10); g.stroke();   /* tail */
+  g.fillStyle = '#111'; g.fillRect(84, -35, 2.5, 2.5);
+  g.strokeStyle = '#2b1a0b'; g.lineWidth = 2; g.beginPath(); g.moveTo(40, -18); g.lineTo(22, -15); g.stroke();   /* the harness */
+  /* the cart */
+  g.fillStyle = '#8a5a2b'; g.strokeStyle = '#3e2812'; g.lineWidth = 2; g.beginPath(); g.roundRect(-34, -32, 60, 20, 3); g.fill(); g.stroke();
+  g.strokeStyle = 'rgba(62,40,18,.55)'; g.lineWidth = 1.2; for (let k = 1; k < 4; k++) { g.beginPath(); g.moveTo(-34, -32 + k * 5); g.lineTo(26, -32 + k * 5); g.stroke(); }
+  g.fillStyle = cloth; g.strokeStyle = '#3e2812'; g.lineWidth = 2; g.beginPath(); g.moveTo(-34, -32); g.quadraticCurveTo(-4, -78, 26, -32); g.closePath(); g.fill(); g.stroke();
+  g.strokeStyle = cloth2; g.lineWidth = 5; [-24, -12, 0, 12].forEach(sx => { g.beginPath(); g.moveTo(sx, -33); g.quadraticCurveTo(sx - 1, -55 + Math.abs(sx) * .25, sx + 1, -62 + Math.abs(sx) * .6); g.stroke(); });
+  g.fillStyle = '#b07a3e'; g.strokeStyle = '#3e2812'; g.lineWidth = 1.3; g.fillRect(-30, -41, 11, 9); g.strokeRect(-30, -41, 11, 9);
+  g.beginPath(); g.arc(19, -37, 6, 0, 7); g.fillStyle = '#6b4423'; g.fill(); g.stroke();   /* goods peeping out */
+  g.fillStyle = '#ffd36b'; g.beginPath(); g.arc(27, -28 + Math.sin(t * 4) * 1.2, 3.4, 0, 7); g.fill();   /* a swinging lantern */
+  /* wheels */
+  [[-18, -2], [14, -2]].forEach(([wx, wy]) => {
+    g.fillStyle = '#6b4423'; g.strokeStyle = '#2b1a0b'; g.lineWidth = 2.4; g.beginPath(); g.arc(wx, wy, 11, 0, 7); g.fill(); g.stroke();
+    g.strokeStyle = '#d7b27a'; g.lineWidth = 1.6; for (let k = 0; k < 4; k++) { const a = roll + k * Math.PI / 4; g.beginPath(); g.moveTo(wx - Math.cos(a) * 9, wy - Math.sin(a) * 9); g.lineTo(wx + Math.cos(a) * 9, wy + Math.sin(a) * 9); g.stroke(); }
+  });
+  /* the merchant, walking beside it */
+  g.fillStyle = '#2e6a9c'; g.fillRect(-52, -22, 9, 15); g.fillStyle = '#f1c8a0'; g.beginPath(); g.arc(-47.5, -27, 5, 0, 7); g.fill();
+  g.fillStyle = '#5b3a1b'; g.beginPath(); g.moveTo(-54, -30); g.lineTo(-47.5, -41); g.lineTo(-41, -30); g.closePath(); g.fill();
+  g.strokeStyle = '#2b1a0b'; g.lineWidth = 2; g.beginPath(); g.moveTo(-50, -7); g.lineTo(-50 + swing * .4, 0); g.moveTo(-45, -7); g.lineTo(-45 - swing * .4, 0); g.stroke();
+  g.restore();
+  if (label) {   /* a name tag over it */
+    g.save(); g.font = onF(650, 14); g.textAlign = 'center'; g.textBaseline = 'middle'; const w = Math.max(g.measureText(label).width, sub ? g.measureText(sub).width : 0) + 18, h = sub ? 36 : 22;
+    g.shadowColor = 'rgba(10,30,50,.35)'; g.shadowBlur = 6; g.shadowOffsetY = 2; g.fillStyle = 'rgba(255,255,255,.94)'; g.beginPath(); g.roundRect(x + 14 - w / 2, y - 98 - h, w, h, 9); g.fill();
+    g.shadowColor = 'transparent'; g.fillStyle = '#1e2a38'; g.fillText(label, x + 14, y - 98 - h + (sub ? 11 : 11));
+    if (sub) { g.font = onF(500, 12); g.fillStyle = premium ? '#a8730b' : '#3d5f8a'; g.fillText(sub, x + 14, y - 98 - h + 26); }
+    g.restore();
+  }
+}
+function onCartItem(slot) {   /* for the board of whoever the trader is visiting: drawn with the village, in front of the road */
+  const R = ON.room; if (!R || !R.merchants || !R.merchants.length || R.merchantFor !== slot) return null;
+  return { y: tileY(roadRow(3)) + D * 1.3, f: () => R.merchants.forEach((m, i) => {
+    const col = 3 + i * 3, row = roadRow(col), t = performance.now() / 1000, stopX = gridCX(col) + 6, stopY = tileY(row) + D * .82;
+    const p = slot === ON.slot && ON.cartT0 ? Math.min(1, (performance.now() - ON.cartT0) / 2800) : 1, e = 1 - Math.pow(1 - p, 3), x = stopX - (1 - e) * (stopX + 140);
+    onCartSprite(ctx, x, stopY, t, m.premium, p < 1, `${m.name} the ${MERCH[m.name].job}`, p >= 1 ? (slot === ON.slot ? 'Click the cart to trade' : null) : null);
+  }) };
+}
+function onCartWorldPos(G, slot, i) {   /* where that cart is on the world map, for its label and for clicking */
+  const r = G.rects[slot], p = ON.room && ON.room.players.find(x => x.slot === slot), rr = (p && p.stats && p.stats.rr) || [], col = 3 + i * 3, row = rr[col] != null ? rr[col] : Math.floor(GRID.rows / 2);
+  const bx = gridCX(col) + 6, by = tileY(row) + D * .82;
+  return [r[0] + bx / cv.width * r[2], r[1] + (by - GRID.oy) / (cv.height - GRID.oy) * r[3]];
+}
+cv.addEventListener('click', (e) => {   /* on your own board, click the cart to trade */
+  const R = ON.room; if (!ON.on || !ON.started || !R || !R.merchants || !R.merchants.length || R.merchantFor !== ON.slot) return;
+  const rc = cv.getBoundingClientRect(), x = (e.clientX - rc.left) * cv.width / rc.width, y = (e.clientY - rc.top) * cv.height / rc.height;
+  for (let i = 0; i < R.merchants.length; i++) { const col = 3 + i * 3, sx = gridCX(col) + 6, sy = tileY(roadRow(col)) + D * .82; if (x > sx - 60 && x < sx + 95 && y > sy - 75 && y < sy + 14) { e.stopImmediatePropagation(); e.preventDefault(); onShopOpen(); return; } }
+}, true);
+
+/* ---------- the admin panel: type the code, then type whatever you want the village to have ---------- */
+const ADMIN_HASH = 4598317598468957;   /* a scrambled form of the code, so it is not sitting in the page as plain text */
+const adminHash = (str, seed = 0) => { let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed; for (let i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); } h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909); h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909); return 4294967296 * (2097151 & h2) + (h1 >>> 0); };
+const ADMIN_LEN = 9;
+function fmtNum(n) { n = Math.floor(n); if (n >= 1e7) return Math.round(n / 1e6) + 'M'; if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M'; if (n >= 1e5) return Math.round(n / 1e3) + 'k'; return String(n); }
+function adminParse(s) {   /* 500000, 500,000, 500k and 20m all work; empty means leave it alone */
+  s = String(s == null ? '' : s).trim().toLowerCase().replace(/[,_\s]/g, ''); if (!s) return null;
+  const m = s.match(/^(\d+(?:\.\d+)?)([km])?$/); if (!m) return NaN;
+  return Math.round(parseFloat(m[1]) * (m[2] === 'm' ? 1e6 : m[2] === 'k' ? 1e3 : 1));
+}
+function adminOpen(skipGate) {
+  const gate = el('adminGate'), panel = el('adminPanel');
+  el('adminModal').classList.remove('hide');
+  if (!skipGate) { gate.classList.remove('hide'); panel.classList.add('hide'); el('adminCode').value = ''; el('adminCode').focus(); el('adminGateMsg').textContent = ''; return; }
+  gate.classList.add('hide'); panel.classList.remove('hide');
+  const R = state.resources, put = (id, v) => { el(id).value = ''; el(id).placeholder = String(v); };
+  put('adminFood', Math.floor(R.food)); put('adminMaterials', Math.floor(R.materials)); put('adminKnowledge', Math.floor(R.knowledge || 0)); put('adminMedicine', Math.floor(R.medicine || 0)); put('adminGoods', Math.floor(R.goods || 0));
+  const alive = state.people.filter(p => p.alive && !p.isLeader); const avg = (k) => alive.length ? Math.round(alive.reduce((a, p) => a + p[k], 0) / alive.length) : 0;
+  put('adminSat', avg('sat')); put('adminHealth', avg('health')); put('adminSettlers', 0);
+  el('adminMsg').textContent = 'Leave a box empty to keep it as it is. You can type 500k or 20m.';
+}
+function adminSpot(type) {   /* the free place nearest the middle of the base where this will fit */
+  const cx = GRID.cols * .3, cy = Math.floor(GRID.rows / 2), found = [];
+  for (let gy = 0; gy < GRID.rows; gy++) for (let gx = 0; gx < GRID.cols; gx++) {
+    const b = { type, gx, gy }; let ok = true;
+    try { footprint(b).forEach(([x, y]) => { if (!tileFree(x, y) || !inPlanReach(x, y)) ok = false; }); } catch (e) { ok = false; }
+    if (ok && type === 'granary') { try { if (Math.min(...footprint(b).map(([x, y]) => riverDist(x, y))) < 2) ok = false; } catch (e) {} }
+    if (ok) found.push([gx, gy, Math.hypot(gx - cx, (gy - cy) * 1.4)]);
+  }
+  found.sort((a, b) => a[2] - b[2]); return found.length ? found[0] : null;
+}
+function adminPlace(type, count) {
+  let placed = 0;
+  for (let i = 0; i < count; i++) { const s = adminSpot(type); if (!s) break; state.buildings.push({ id: state.nextId++, type, gx: s[0], gy: s[1], progress: 1, admin: true }); mapChanged(); placed++; }
+  return placed;
+}
+function adminApply() {
+  const R = state.resources, val = (id) => adminParse(el(id).value), notes = [], bad = [];
+  const want = { food: val('adminFood'), materials: val('adminMaterials'), knowledge: val('adminKnowledge'), medicine: val('adminMedicine'), goods: val('adminGoods'), sat: val('adminSat'), health: val('adminHealth'), settlers: val('adminSettlers') };
+  Object.keys(want).forEach(k => { if (Number.isNaN(want[k])) bad.push(k); }); if (bad.length) { el('adminMsg').textContent = `I could not read: ${bad.join(', ')}. Use plain numbers like 500000, 500k or 20m.`; return; }
+  const store = el('adminStorage').checked;
+  ['food', 'materials', 'knowledge', 'medicine', 'goods'].forEach(k => { if (want[k] != null) { R[k] = Math.max(0, Math.min(2e9, want[k])); notes.push(`${k} is now ${R[k].toLocaleString()}`); } });
+  if (want.settlers > 0) {
+    const n = Math.min(300, want.settlers); for (let i = 0; i < n; i++) { const p = makePerson('unassigned'); p.sat = 70; p.health = 80; state.people.push(p); } notes.push(`${n} settlers arrived`);
+    if (store) { const s = adminPlace('shelter', Math.min(40, Math.ceil(n / 8))); if (s) notes.push(`${s} shelters built to house them`); }
+  }
+  if (want.sat != null || want.health != null) state.people.forEach(p => { if (p.alive && !p.isLeader) { if (want.sat != null) p.sat = clamp(want.sat, 0, 100); if (want.health != null) p.health = clamp(want.health, 0, 100); } });
+  if (want.sat != null) notes.push(`satisfaction ${clamp(want.sat, 0, 100)}`); if (want.health != null) notes.push(`health ${clamp(want.health, 0, 100)}`);
+  if (store && want.food != null) {   /* a granary keeps 80 food, so the whole pile is also marked safe from spoilage */
+    const g = adminPlace('granary', Math.min(12, Math.max(want.food > 500 ? 1 : 0, Math.ceil(R.food / 80)))); state.adminSafe = Math.max(state.adminSafe || 0, R.food);
+    notes.push(`${g} granar${g === 1 ? 'y' : 'ies'} added, and all of it is kept safe from spoilage`);
+  }
+  if (store && want.materials != null) { const s = adminPlace('stockpile', Math.min(6, Math.max(want.materials > 500 ? 1 : 0, Math.ceil(R.materials / 100000)))); notes.push(`${s} stockpile${s === 1 ? '' : 's'} added`); }
+  mapChanged(); syncWalkers(); renderAll();
+  const msg = 'Admin: ' + (notes.join('; ') || 'nothing changed') + '.'; addLog(msg, 'good'); setMsg(msg);
+  el('adminMsg').textContent = msg; setTimeout(() => el('adminModal').classList.add('hide'), 900);
+}
+let adminBuf = '', adminTaps = [];
+document.addEventListener('keydown', (e) => {   /* typed anywhere there is no text box */
+  if (e.ctrlKey || e.metaKey || e.altKey || !e.key || e.key.length !== 1) return;
+  const tg = e.target && e.target.tagName; if (tg === 'INPUT' || tg === 'TEXTAREA' || tg === 'SELECT') return;
+  adminBuf = (adminBuf + e.key.toLowerCase()).slice(-ADMIN_LEN);
+  if (adminBuf.length === ADMIN_LEN && adminHash(adminBuf) === ADMIN_HASH) { adminBuf = ''; adminOpen(true); }
+});
+document.addEventListener('input', (e) => {   /* or typed into any ordinary text box, like the answer boxes */
+  const t = e.target; if (!t || t.tagName !== 'INPUT' || (t.closest && t.closest('#adminModal'))) return;
+  const v = String(t.value || '').toLowerCase(); if (v.length < ADMIN_LEN) return;
+  if (adminHash(v.slice(-ADMIN_LEN)) === ADMIN_HASH) { t.value = v.slice(0, -ADMIN_LEN); adminOpen(true); }
+});
+el('phaseTag').addEventListener('click', () => {   /* on a phone: tap the season badge five times, then type the code */
+  const now = Date.now(); adminTaps = adminTaps.filter(x => now - x < 3000); adminTaps.push(now);
+  if (adminTaps.length >= 5) { adminTaps = []; adminOpen(false); }
+});
+el('adminGo').addEventListener('click', () => { if (adminHash(el('adminCode').value.trim().toLowerCase()) === ADMIN_HASH) adminOpen(true); else el('adminGateMsg').textContent = 'That is not the code.'; });
+el('adminCode').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); el('adminGo').click(); } });
+el('adminApply').addEventListener('click', adminApply);
+el('adminMax').addEventListener('click', () => { el('adminMaterials').value = '500000'; el('adminFood').value = '20000000'; });
+['adminClose', 'adminClose2'].forEach(id => el(id).addEventListener('click', () => el('adminModal').classList.add('hide')));
+
 /* ---------- traders: one docks each season, and what is on the cart depends on who it is ----------
    Four goods each, and two rare ones that only come when two traders arrive together (about 1.5% of seasons).
    Costs are paid when you buy; stock is limited and the server hands it out first come, first served. */
@@ -49013,7 +49277,10 @@ function onItemApply(fx) {
   if (fx.army) { state.army = state.army || {}; Object.keys(fx.army).forEach(k => { state.army[k] = (state.army[k] || 0) + fx.army[k]; const u = ON_UNITS.find(x => x.k === k); parts.push(`${fx.army[k]} ${u ? u.name.toLowerCase() : k} join you`); }); }
   return parts.join(', ') || 'nothing much';
 }
-function onShopOpen() { onShopDraw(); el('merchantModal').classList.remove('hide'); }
+function onShopOpen() {
+  if (!ON.room || ON.room.merchantFor !== ON.slot) { setMsg(ON.room && ON.room.merchants && ON.room.merchants.length ? `The trader is visiting ${onName(ON.room.merchantFor)}'s base, not yours.` : 'No trader is in port.'); return; }
+  onShopDraw(); el('merchantModal').classList.remove('hide');
+}
 function onShopDraw() {
   const ms = (ON.room && ON.room.merchants) || [];
   el('merchantBody').innerHTML = ms.length ? ms.map(m => {
@@ -49036,6 +49303,8 @@ el('merchantClose').addEventListener('click', () => el('merchantModal').classLis
 
 /* ---------- the shared world: everyone's real island, side by side, with the river between ---------- */
 const ON_COLS = 20, ON_ROWS = 14;   /* an online island: more, smaller blocks than the solo map, and no river through it */
+let ON_FF = null;
+function onF(w, px) { if (!ON_FF) ON_FF = getComputedStyle(document.body).fontFamily || 'system-ui, sans-serif'; return `${w} ${px}px ${ON_FF}`; }
 const onRng = (seed) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 function onGeom(n) {
   const ow = GRID.cols * GRID.tile, oh = GRID.rows * GRID.depth;
@@ -49051,6 +49320,11 @@ function onGeom(n) {
     : n === 3 ? [[cx, top + bh * .25], [cx, top + bh * .7], [xA + bw / 2, rowY], [xB + bw / 2, rowY]]
     : [[cx, top + bh * .25], [cx, top + bh * .72], [cx, yC + bh * .3], [cx, yC + bh * .75], [xA + bw / 2, rowY], [xB + bw / 2, rowY]];
   return (onGeom.c = { n, ow, oh, bw, bh, fw, rv, rh, top, WW, WH, cx, rowY, rects, docks, spots, yC });
+}
+function onDockAt(G, slot, i) {   /* where a visiting trader's boat ties up: in the water beside that island */
+  const r = G.rects[slot]; if (!r) return [G.cx, G.rowY];
+  const leftSide = r[0] + r[2] / 2 < G.WW / 2 - 5, x = leftSide ? r[0] + r[2] + G.rv / 2 : r[0] - G.rv / 2;
+  return [x, r[1] + r[3] * (i ? .3 : .62)];
 }
 function onHudDraw() {
   const wb = el('worldBtn'), ab = el('armyBtn'); if (!wb) return;
@@ -49163,7 +49437,7 @@ function onMerchBoat(g, x, y, t, premium, i) {
 }
 
 /* ---- other people's islands are painted with the game's own drawing code, from what they last told us ---- */
-function onPaintBoard() {   /* what draw() paints, once, without moving anyone or scheduling another frame */
+function onPaintBoard(slot) {   /* what draw() paints, once, without moving anyone or scheduling another frame */
   ctx.clearRect(0, 0, cv.width, cv.height); drawGround();
   const items = [];
   for (let gy = 0; gy < GRID.rows; gy++) for (let gx = 0; gx < GRID.cols; gx++) {
@@ -49172,6 +49446,7 @@ function onPaintBoard() {   /* what draw() paints, once, without moving anyone o
     if (t === 'rock') { const x = gridCX(gx), y = tileY(gy) + D * .75, s = .85 + hash(gx, gy) * .15; items.push({ y, f: () => drawRock(x, y, s) }); }
   }
   state.buildings.filter(b => b.type !== 'bridge').forEach(b => items.push({ y: tileY(b.gy + sizeOf(b)[1]) - 4, f: () => drawBuilding(b) }));
+  { const ci = onCartItem(slot == null ? ON.slot : slot); if (ci) items.push(ci); }
   const time = performance.now(); state.walkers.forEach(w => items.push({ y: w.y, f: () => drawWalker(w, time) }));
   items.sort((a, b) => a.y - b.y).forEach(it => it.f());
 }
@@ -49200,12 +49475,12 @@ function onRenderBoard(p) {
       walkers: bd.to.map((w, i) => { const f = bd.from[i] || w; return { x: f[0] + (w[0] - f[0]) * k, y: f[1] + (w[1] - f[1]) * k, path: null, bob: i * 1.7, role: RK[w[2]] || 'unassigned', lead: !!w[3], speed: 0 }; }),
       people: [], phase: 'sim', selectedPlaced: null, leaderLook: {}, gather: null, hover: null, tool: null });
     reachCache = null; landCache = null; walkCache = null; futureCache = null; planCache = null;
-    onPaintBoard(); bd.c.getContext('2d').clearRect(0, 0, bd.c.width, bd.c.height); bd.c.getContext('2d').drawImage(cv, 0, 0);
+    onPaintBoard(p.slot); bd.c.getContext('2d').clearRect(0, 0, bd.c.width, bd.c.height); bd.c.getContext('2d').drawImage(cv, 0, 0);
   } finally {
     for (const key of Object.keys(state)) delete state[key];
     Object.assign(state, saved);
     reachCache = null; landCache = null; walkCache = null; futureCache = null; planCache = null;
-    onPaintBoard();   /* put your own board back before anything is shown */
+    onPaintBoard(ON.slot);   /* put your own board back before anything is shown */
   }
   return bd.c;
 }
@@ -49268,7 +49543,7 @@ function onWorldFrame(ts) {
   const nw = performance.now(); ON.lasers = (ON.lasers || []).filter(a => nw - a.t0 < 3000);
     if (!zoomedIn) { onWatcher(g, t, ON.lasers.length > 0, G.cx); lab('Mr Lovegrove - The Watcher', G.cx, ON_WATCHER_Y + 6, 17, '#1b2a3a', true); }
   if (ON.say && nw - ON.say.t0 < 2600) lab(ON.say.text, G.cx, ON_WATCHER_Y - 4, 20, '#7a3b12', true);
-  (R.merchants || []).forEach((m, i) => { const d = G.docks[i % G.docks.length]; onMerchBoat(g, d[0], d[1], t, m.premium, i); lab(`${m.name} the ${MERCH[m.name].job}`, d[0], d[1] + 40, 16, m.premium ? '#ffe08a' : '#ffffff', true); if (m.premium) lab('Rare goods!', d[0], d[1] + 59, 14, '#ffd36b', true); });
+  (R.merchants || []).forEach((m, i) => { const d = onCartWorldPos(G, R.merchantFor, i), mine = R.merchantFor === ON.slot; lab(`${m.name} the ${MERCH[m.name].job}`, d[0] + 6, d[1] - 52, 14, m.premium ? '#ffe08a' : '#ffffff', true); lab(mine ? 'your visitor' : `at ${onName(R.merchantFor)}'s base`, d[0] + 6, d[1] - 36, 12, mine ? '#ffd36b' : '#e8f1fa', false); });
   ON.lasers.forEach(a => onLaser(g, a, t, G));
 
   const spots = G.spots;
@@ -49279,7 +49554,7 @@ function onWorldFrame(ts) {
     if (R.treasure.kind === 'monster') { g.beginPath(); g.arc(x - 8, y + 4, 8, Math.PI, 0); g.arc(x + 8, y + 4, 8, Math.PI, 0); g.stroke(); }
     else if (R.treasure.kind === 'idol') { g.fillStyle = '#e0a33e'; g.beginPath(); g.arc(x, y - 4, 8, 0, 7); g.fill(); g.fillRect(x - 6, y + 2, 12, 10); }
     else { g.beginPath(); g.moveTo(x - 9, y - 9); g.lineTo(x + 9, y + 9); g.moveTo(x + 9, y - 9); g.lineTo(x - 9, y + 9); g.stroke(); }
-    lab('Click to dig!', x, y + 36, 15, '#fff', true);
+    lab('Click to play for it!', x, y + 36, 15, '#fff', true);
   }
   const now = performance.now();
   ON.anim = ON.anim.filter(a => now - a.t0 < 3400);
@@ -49309,15 +49584,16 @@ function onWorldFrame(ts) {
   R.players.forEach(p => {
     const r = isl[p.slot], st = p.stats || {}, col = ON_COLORS[p.slot], me = p.slot === ON.slot, ow = R.owners && R.owners[p.slot] != null;
     const bx = cam.x + r[0] * cam.s + 8, by = cam.y + r[1] * cam.s + 8, label = p.name + (me ? ' (you)' : '') + (ow ? ' (taken)' : '') + (st.pop != null && !ow ? '  ' + st.pop : '');
-    g.font = '800 20px sans-serif'; const w = g.measureText(label).width + 22;
-    g.fillStyle = col; g.strokeStyle = '#1a1a1a'; g.lineWidth = 3; g.beginPath(); g.roundRect(bx, by, w, 32, 10); g.fill(); g.stroke();
-    g.lineWidth = 4; g.strokeStyle = '#1a1a1a'; g.strokeText(label, bx + 11, by + 17); g.fillStyle = '#fff'; g.fillText(label, bx + 11, by + 17);
+    g.font = onF(650, 17); const w = g.measureText(label).width + 28;
+    g.shadowColor = 'rgba(10,30,50,.35)'; g.shadowBlur = 8; g.shadowOffsetY = 2; g.fillStyle = col; g.beginPath(); g.roundRect(bx, by, w, 32, 16); g.fill();
+    g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0; g.lineWidth = 2; g.strokeStyle = 'rgba(255,255,255,.9)'; g.stroke();
+    g.fillStyle = '#fff'; g.fillText(label, bx + 14, by + 17);
   });
   g.textAlign = 'center';
-  labels.forEach(([text, wx, wy, px, col, bold]) => { g.font = `${bold ? '700' : '500'} ${px}px sans-serif`; g.lineWidth = 4; g.strokeStyle = 'rgba(20,40,60,.65)'; const X = cam.x + wx * cam.s, Y = cam.y + wy * cam.s; g.strokeText(text, X, Y); g.fillStyle = col; g.fillText(text, X, Y); });
+  labels.forEach(([text, wx, wy, px, col, bold]) => { g.font = onF(bold ? 650 : 500, px); const X = cam.x + wx * cam.s, Y = cam.y + wy * cam.s; g.shadowColor = 'rgba(10,30,50,.75)'; g.shadowBlur = 5; g.shadowOffsetY = 1; g.fillStyle = col; g.fillText(text, X, Y); g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0; });
   if (zoomedIn) {   /* zoomed in, so the Watcher watches from the top edge of the picture */
     const k = Math.min(1, CW / 1100) * .8; g.save(); g.setTransform(k, 0, 0, k, CW / 2, 2); onWatcher(g, t, ON.lasers.length > 0, 0); g.restore();
-    g.font = '700 14px sans-serif'; g.lineWidth = 4; g.strokeStyle = 'rgba(10,30,50,.75)'; g.strokeText('Mr Lovegrove - The Watcher', CW / 2, 4 + 120 * k); g.fillStyle = '#fff'; g.fillText('Mr Lovegrove - The Watcher', CW / 2, 4 + 120 * k);
+    g.font = onF(650, 14); g.shadowColor = 'rgba(10,30,50,.8)'; g.shadowBlur = 5; g.shadowOffsetY = 1; g.fillStyle = '#fff'; g.fillText('Mr Lovegrove - The Watcher', CW / 2, 4 + 120 * k); g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0;
   }
   g.textAlign = 'left';
   ON.raf = requestAnimationFrame(onWorldFrame);
@@ -49327,9 +49603,9 @@ function onIslandAt(wx, wy) { const R = ON.room; if (!R) return -1; const isl = 
 el('worldCanvas').addEventListener('click', (e) => {
   const R = ON.room; if (!R) return; const q = onCanvasPt(e), hit = 44 / Math.min(1, q.s), G = onGeom(R.players.length);
     if (Math.hypot(q.wx - G.cx, q.wy - (ON_WATCHER_Y + 55)) < 46) { ON.say = { text: ON_WATCHER_LINES[Math.floor(Math.random() * ON_WATCHER_LINES.length)], t0: performance.now() }; return; }
-  for (let i = 0; i < (R.merchants || []).length; i++) { const d = G.docks[i % G.docks.length]; if (Math.hypot(q.wx - d[0], q.wy - d[1]) < hit) { onShopOpen(); return; } }
+  for (let i = 0; i < (R.merchants || []).length; i++) { const d = onCartWorldPos(G, R.merchantFor, i); if (Math.hypot(q.wx - d[0] - 18, q.wy - d[1] + 10) < 46) { if (R.merchantFor === ON.slot) onShopOpen(); else setMsg(`${R.merchants[i].name} is visiting ${onName(R.merchantFor)}'s base, not yours.`); return; } }
 
-  if (R.treasure && !ON.finished) { const [tx, ty] = G.spots[R.treasure.spot % G.spots.length]; if (Math.hypot(q.wx - tx, q.wy - ty) < 36 / Math.min(1, q.s)) { onSend({ t: 'dig', id: R.treasure.id }); return; } }
+  if (R.treasure && !ON.finished) { const [tx, ty] = G.spots[R.treasure.spot % G.spots.length]; if (Math.hypot(q.wx - tx, q.wy - ty) < 36 / Math.min(1, q.s)) { onWireOpen(); return; } }
   const i = onIslandAt(q.wx, q.wy);
   if (i >= 0 && ON.focus !== i) onZoomTo(i); else if (i < 0) onZoomTo(null);   /* an island zooms in; the water zooms out */
 });
@@ -49362,7 +49638,7 @@ function onWorldDraw() {
   const a = onArmy();
   panel.innerHTML = `<p class="note" style="margin:8px 0 0">${state.year < 2 ? 'War opens in Season 2. ' : ''}Your army: attack ${a.att}, defence ${a.def}${a.boats ? '' : '. Build a <b>harbour</b> (Season 3) so your boats can cross the river'}. A raid costs ${costText(ON_RAID)} and is settled when everyone starts the next season.</p>
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">${cards}</div>
-    ${(R.merchants || []).length ? `<div class="note" style="margin:8px 0 0"><b>${R.merchants.map(m => `${m.name} the ${MERCH[m.name].job}`).join(' and ')}</b> ${R.merchants.length > 1 ? 'are in port with rare goods!' : 'is in port.'} <button class="btn small" data-act="shop" type="button">Visit the shop</button></div>` : ''}
+    ${(R.merchants || []).length ? `<div class="note" style="margin:8px 0 0"><b>${R.merchants.map(m => `${m.name} the ${MERCH[m.name].job}`).join(' and ')}</b> ${R.merchants.length > 1 ? 'have' : 'has'} arrived with a cart at ${R.merchantFor === ON.slot ? 'your base' : esc(onName(R.merchantFor)) + "'s base"}. ${R.merchantFor === ON.slot ? '<button class="btn small" data-act="shop" type="button">Visit the shop</button>' : ''}</div>` : ''}
     ${R.treasure ? '<p class="note" style="margin:8px 0 0"><b>Something is in the river!</b> Click it on the map to dig it up. First there wins.</p>' : ''}
     <h3 style="margin:12px 0 4px;font-size:1rem">News</h3><div id="onFeed" style="max-height:120px;overflow:auto;font-size:.88rem">${ON.feed.slice(-12).reverse().map(f => `<div>${esc(f)}</div>`).join('') || '<div class="note">Nothing yet.</div>'}</div>
     <div class="mp-row" style="margin-top:6px"><input class="mp-in" id="onChat" maxlength="140" placeholder="Say something to everyone"><button class="btn small" data-act="chat" type="button">Send</button></div>`;
