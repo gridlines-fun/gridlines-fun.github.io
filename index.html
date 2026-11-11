@@ -4106,6 +4106,7 @@ html[data-theme="dark"] #game .hero{ background:linear-gradient(#1C3B57,#27506F 
 #game .treasure-banner{position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:345;background:linear-gradient(135deg,#fff3c4,#ffd36b);color:#3a2a08;border:2px solid #b07a12;border-radius:14px;padding:9px 16px;box-shadow:0 8px 28px rgba(0,0,0,.25);display:flex;gap:10px;align-items:center;flex-wrap:wrap;max-width:94vw;font-size:.92rem}
 #game .treasure-banner b{font-size:1rem}
 #game .treasure-banner.hide{display:none}
+#adminModal .hide{display:none!important}
 </style>
 </head>
 <body>
@@ -49126,6 +49127,7 @@ cv.addEventListener('click', (e) => {   /* on your own board, click the cart to 
 const ADMIN_HASH = 4598317598468957;   /* a scrambled form of the code, so it is not sitting in the page as plain text */
 const adminHash = (str, seed = 0) => { let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed; for (let i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); } h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909); h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909); return 4294967296 * (2097151 & h2) + (h1 >>> 0); };
 const ADMIN_LEN = 9;
+let adminUnlocked = false;   /* set only when the right code has been given: nothing below works without it */
 function fmtNum(n) { n = Math.floor(n); if (n >= 1e7) return Math.round(n / 1e6) + 'M'; if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M'; if (n >= 1e5) return Math.round(n / 1e3) + 'k'; return String(n); }
 function adminParse(s) {   /* 500000, 500,000, 500k and 20m all work; empty means leave it alone */
   s = String(s == null ? '' : s).trim().toLowerCase().replace(/[,_\s]/g, ''); if (!s) return null;
@@ -49135,6 +49137,7 @@ function adminParse(s) {   /* 500000, 500,000, 500k and 20m all work; empty mean
 function adminOpen(skipGate) {
   const gate = el('adminGate'), panel = el('adminPanel');
   el('adminModal').classList.remove('hide');
+  adminUnlocked = !!skipGate;
   if (!skipGate) { gate.classList.remove('hide'); panel.classList.add('hide'); el('adminCode').value = ''; el('adminCode').focus(); el('adminGateMsg').textContent = ''; return; }
   gate.classList.add('hide'); panel.classList.remove('hide');
   const R = state.resources, put = (id, v) => { el(id).value = ''; el(id).placeholder = String(v); };
@@ -49159,6 +49162,7 @@ function adminPlace(type, count) {
   return placed;
 }
 function adminApply() {
+  if (!adminUnlocked) { el('adminMsg').textContent = 'Enter the code first.'; return; }
   const R = state.resources, val = (id) => adminParse(el(id).value), notes = [], bad = [];
   const want = { food: val('adminFood'), materials: val('adminMaterials'), knowledge: val('adminKnowledge'), medicine: val('adminMedicine'), goods: val('adminGoods'), sat: val('adminSat'), health: val('adminHealth'), settlers: val('adminSettlers') };
   Object.keys(want).forEach(k => { if (Number.isNaN(want[k])) bad.push(k); }); if (bad.length) { el('adminMsg').textContent = `I could not read: ${bad.join(', ')}. Use plain numbers like 500000, 500k or 20m.`; return; }
@@ -49177,7 +49181,7 @@ function adminApply() {
   if (store && want.materials != null) { const s = adminPlace('stockpile', Math.min(6, Math.max(want.materials > 500 ? 1 : 0, Math.ceil(R.materials / 100000)))); notes.push(`${s} stockpile${s === 1 ? '' : 's'} added`); }
   mapChanged(); syncWalkers(); renderAll();
   const msg = 'Admin: ' + (notes.join('; ') || 'nothing changed') + '.'; addLog(msg, 'good'); setMsg(msg);
-  el('adminMsg').textContent = msg; setTimeout(() => el('adminModal').classList.add('hide'), 900);
+  el('adminMsg').textContent = msg; setTimeout(() => { adminUnlocked = false; el('adminModal').classList.add('hide'); }, 900);
 }
 let adminBuf = '', adminTaps = [];
 document.addEventListener('keydown', (e) => {   /* typed anywhere there is no text box */
@@ -49195,11 +49199,11 @@ el('phaseTag').addEventListener('click', () => {   /* on a phone: tap the season
   const now = Date.now(); adminTaps = adminTaps.filter(x => now - x < 3000); adminTaps.push(now);
   if (adminTaps.length >= 5) { adminTaps = []; adminOpen(false); }
 });
-el('adminGo').addEventListener('click', () => { if (adminHash(el('adminCode').value.trim().toLowerCase()) === ADMIN_HASH) adminOpen(true); else el('adminGateMsg').textContent = 'That is not the code.'; });
+el('adminGo').addEventListener('click', () => { if (adminHash(el('adminCode').value.trim().toLowerCase()) === ADMIN_HASH) adminOpen(true); else { adminUnlocked = false; el('adminGateMsg').textContent = 'That is not the code.'; } });
 el('adminCode').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); el('adminGo').click(); } });
 el('adminApply').addEventListener('click', adminApply);
 el('adminMax').addEventListener('click', () => { el('adminMaterials').value = '500000'; el('adminFood').value = '20000000'; });
-['adminClose', 'adminClose2'].forEach(id => el(id).addEventListener('click', () => el('adminModal').classList.add('hide')));
+['adminClose', 'adminClose2'].forEach(id => el(id).addEventListener('click', () => { adminUnlocked = false; el('adminModal').classList.add('hide'); }));
 
 /* ---------- traders: one docks each season, and what is on the cart depends on who it is ----------
    Four goods each, and two rare ones that only come when two traders arrive together (about 1.5% of seasons).
